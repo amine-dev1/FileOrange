@@ -1,3 +1,4 @@
+import { DonateCard } from "../components/DonateCard";
 import { ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { DropZone } from "../components/DropZone";
@@ -99,6 +100,8 @@ export function Dashboard() {
             <JobList jobs={jobs.slice(0, 5)} caption="Recent jobs" />
           )}
         </Card>
+
+        <DonateCard />
       </div>
     </>
   );

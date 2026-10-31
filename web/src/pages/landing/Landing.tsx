@@ -6,6 +6,7 @@ import {
   Files,
   FileText,
   FolderArchive,
+  Heart,
   Image,
   MapPin,
   MousePointerClick,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { DONATE_URL } from "../../lib/donate";
 import { formatLimit } from "../../lib/format";
 import { useCapabilities } from "../../state/CapabilitiesProvider";
 import { ConversionMachine } from "./ConversionMachine";
@@ -568,6 +570,31 @@ export function Landing() {
             </Link>
           </div>
         </Section>
+        {/* ------------------------------------------------------------------ support */}
+        <Section id="support" className="pb-24">
+          <div data-reveal className="grid items-center gap-8 rounded-[2rem] border-2 border-aubergine bg-mint p-8 text-aubergine sm:p-12 md:grid-cols-[1.4fr_1fr]">
+            <div>
+              <p className="font-mono text-xs font-bold tracking-[0.18em] uppercase">Support</p>
+              <h2 className="mt-3 font-display text-4xl leading-[1.02] font-bold tracking-tight sm:text-5xl">Free, no ads. Kept going by people like you.</h2>
+              <p className="mt-4 max-w-xl text-lg">
+                OrangeFile is made by one developer. If it saved you time, a donation helps pay for the server and for the next tools.
+              </p>
+            </div>
+            <div className="flex flex-col items-start gap-3 md:items-end">
+              <a
+                href={DONATE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-2.5 rounded-full bg-aubergine px-8 py-4 text-base font-semibold text-peel shadow-[4px_4px_0_0_var(--color-peel)] transition-transform hover:-translate-y-0.5"
+              >
+                <Heart className="size-5 transition-transform group-hover:scale-110" aria-hidden />
+                Donate with PayPal
+                <span className="sr-only">(opens in a new tab)</span>
+              </a>
+              <p className="font-mono text-xs font-semibold">Any amount · card or PayPal account</p>
+            </div>
+          </div>
+        </Section>
       </main>
 
       <footer className="border-t-2 border-aubergine/10 px-4 py-10 sm:px-6 dark:border-peel/10">
@@ -597,6 +624,9 @@ export function Landing() {
             </a>
             <a href="#privacy" className="hover:underline">
               Privacy
+            </a>
+            <a href={DONATE_URL} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              Donate<span className="sr-only"> (opens in a new tab)</span>
             </a>
             <Link to="/about" className="hover:underline">
               About and licences
