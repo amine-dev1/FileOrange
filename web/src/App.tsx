@@ -15,6 +15,7 @@ import { OfficeToPdfPage } from "./pages/OfficeToPdf";
 import { PdfHub } from "./pages/PdfHub";
 import { PdfToImagesPage } from "./pages/PdfToImages";
 import { SplitPage } from "./pages/Split";
+import { Landing } from "./pages/landing/Landing";
 
 // The editor is the largest screen and not everyone opens it, so it loads on demand.
 const PdfEditorPage = lazy(() => import("./pages/editor/PdfEditorPage"));
@@ -22,8 +23,9 @@ const PdfEditorPage = lazy(() => import("./pages/editor/PdfEditorPage"));
 export function App() {
   return (
     <Routes>
+      <Route index element={<Landing />} />
       <Route element={<AppShell />}>
-        <Route index element={<Dashboard />} />
+        <Route path="app" element={<Dashboard />} />
         <Route path="convert" element={<ConvertPage />} />
         <Route path="compress" element={<CompressPage />} />
         <Route path="extract" element={<ExtractPage />} />

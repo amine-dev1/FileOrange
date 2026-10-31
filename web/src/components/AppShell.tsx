@@ -1,6 +1,6 @@
 import { Clock, FileText, House, Info, Menu, Monitor, Moon, RefreshCw, Sun, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useCapabilities } from "../state/CapabilitiesProvider";
 import { isActive, useJobs } from "../state/JobsProvider";
 import { useTheme, type ThemeChoice } from "../state/ThemeProvider";
@@ -11,7 +11,7 @@ import type { MeResponse } from "../lib/types";
 import { Badge, Button, ProgressBar, cx } from "./ui";
 
 const NAV = [
-  { to: "/", label: "Dashboard", Icon: House, end: true },
+  { to: "/app", label: "Dashboard", Icon: House, end: true },
   { to: "/convert", label: "Convert", Icon: TOOLS[0].Icon },
   { to: "/pdf", label: "PDF tools", Icon: FileText },
   { to: "/compress", label: "Compress", Icon: TOOLS[1].Icon },
@@ -77,10 +77,10 @@ function UsageMeter() {
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2.5 px-2">
+    <Link to="/" className="flex items-center gap-2.5 rounded-lg px-2" aria-label="OrangeFile home">
       <img src="/logo.png" alt="" width={32} height={32} className="size-8 rounded-lg" />
       <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">OrangeFile</span>
-    </div>
+    </Link>
   );
 }
 

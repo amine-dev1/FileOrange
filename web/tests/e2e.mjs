@@ -128,9 +128,49 @@ const radio = (page, name) => page.getByRole("radio", { name, exact: true });
 const hasPdfium = !!env.ORANGEFILE_PDFIUM;
 
 // ================================================================== dashboard and capabilities
-section("Dashboard follows what the engine reports");
+section("Landing page");
 {
   const a = await open("/");
+  const { page } = a;
+  await page.getByRole("heading", { level: 1, name: /Turn the file you have into the one you need/ }).waitFor();
+  ok(true, "the headline is there");
+  ok(await page.getByRole("figure").getByText(/tool:/).isVisible(), "the conversion animation runs");
+  await page.getByRole("button", { name: "Show example: Folder to ZIP" }).click();
+  await page.getByRole("figure").getByText("Compress to ZIP").waitFor();
+  ok(true, "an example can be picked");
+  await page.getByRole("link", { name: /Merge PDFs/ }).click();
+  await page.getByRole("heading", { name: "Merge PDFs" }).waitFor();
+  ok(true, "a tool on the landing page opens that tool");
+  await page.goto(BASE + "/");
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Open the app" }).click();
+  await page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ }).waitFor();
+  ok(true, "Open the app goes to the dashboard");
+  await page.getByRole("link", { name: "OrangeFile home" }).click();
+  await page.getByRole("heading", { level: 1, name: /Turn the file/ }).waitFor();
+  ok(true, "the logo in the app leads back to the landing page");
+  await page.getByText("Is it really free?").click();
+  await page.getByText(/no paid plan and no account/).waitFor();
+  ok(true, "questions open");
+  eq(errorsOf(a), [], "no console errors on the landing page");
+  await a.close();
+
+  const m = await open("/", { w: 390, h: 800, mobile: true });
+  ok(await m.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "landing: no sideways scrolling on a phone");
+  await m.close();
+
+  // people who ask for less motion see everything at once, without animation
+  const ctx = await browser.newContext({ reducedMotion: "reduce", extraHTTPHeaders: HOSTED ? { "x-test-ip": "10.40.0.1" } : undefined });
+  const rp = await ctx.newPage();
+  await rp.goto(BASE + "/");
+  await rp.getByRole("heading", { level: 1 }).waitFor();
+  const hidden = await rp.evaluate(() => [...document.querySelectorAll("[data-reveal], .lp-rise")].filter((e) => getComputedStyle(e).opacity !== "1").length);
+  eq(hidden, 0, "with reduced motion nothing waits for an animation to be seen");
+  await ctx.close();
+}
+
+section("Dashboard follows what the engine reports");
+{
+  const a = await open("/app");
   const { page } = a;
   await page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ }).waitFor();
   const caps = await (await eng("/capabilities")).json();
@@ -569,7 +609,7 @@ if (HOSTED) {
     await v1.page.getByRole("button", { name: "Convert", exact: true }).click();
     await done(v1.page);
     const jobId = await v1.page.evaluate(() => JSON.parse(localStorage.getItem("orangefile.web.jobs.v1") ?? "[]")[0]?.serverId ?? null);
-    const v2 = await open("/");
+    const v2 = await open("/app");
     const token2 = await v2.page.evaluate(() => localStorage.getItem("orangefile.web.session.v1"));
     if (jobId) {
       const r = await fetch(`${API}/api/v1/jobs/${jobId}`, { headers: { authorization: `Bearer ${token2}`, "x-test-ip": "10.99.0.2" } });
@@ -602,7 +642,7 @@ section("Recent jobs, theme and phone layout");
   ok(await page.evaluate(() => document.documentElement.classList.contains("dark")), "and is remembered");
   await a.close();
 
-  const m = await open("/", { w: 390, h: 800, mobile: true });
+  const m = await open("/app", { w: 390, h: 800, mobile: true });
   ok(await m.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "no sideways scrolling on a phone");
   await m.page.getByRole("button", { name: "Open menu" }).click();
   await m.page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Compress" }).click();
@@ -618,7 +658,7 @@ section("Recent jobs, theme and phone layout");
 
 section("Accessibility (axe, WCAG A and AA) in light and dark");
 for (const dark of [false, true]) {
-  const a = await open("/", { dark });
+  const a = await open("/app", { dark });
   const { page } = a;
   await page.evaluate(axeSrc);
   const check = async (name) => {
@@ -628,6 +668,11 @@ for (const dark of [false, true]) {
   };
   const go = async (p) => { await page.goto(BASE + p); await page.waitForSelector("main"); await page.evaluate(axeSrc); };
   await check("dashboard");
+  await go("/");
+  for (let y = 0; y < 6000; y += 500) { await page.evaluate((y) => window.scrollTo(0, y), y); await page.waitForTimeout(60); }
+  await page.waitForTimeout(900);
+  await check("landing");
+  await go("/app");
   await input(page).setInputFiles([red, pdfFix("three-pages.pdf")]);
   await page.getByRole("heading", { name: "Selected files" }).waitFor();
   await check("dashboard with files");
@@ -659,7 +704,7 @@ for (const dark of [false, true]) {
 // Hosted: the engine also serves the page, so with it gone there is no page to explain anything.
 if (!HOSTED) {
   section("The engine going away is explained, not hidden");
-  const a = await open("/");
+  const a = await open("/app");
   stop(engine);
   await new Promise((r) => setTimeout(r, 800));
   await a.page.reload();

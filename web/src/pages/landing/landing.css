@@ -1,0 +1,76 @@
+/* Motion for the landing page. Every effect here is switched off for people who ask for reduced motion. */
+
+/* page load: the headline rises line by line, then the mint marker sweeps under "you need" */
+.lp-rise { opacity: 0; transform: translateY(0.45em); animation: lp-rise 0.8s cubic-bezier(0.2, 0.7, 0.1, 1) forwards; }
+@keyframes lp-rise { to { opacity: 1; transform: none; } }
+.lp-marker {
+  background-image: linear-gradient(var(--color-mint), var(--color-mint));
+  background-repeat: no-repeat; background-position: 0 88%; background-size: 0% 0.32em;
+  animation: lp-marker 0.9s 0.95s cubic-bezier(0.6, 0, 0.2, 1) forwards;
+}
+@keyframes lp-marker { to { background-size: 100% 0.32em; } }
+
+/* the hero field: tangerine with a fine aubergine dot grid that fades out towards the bottom */
+.lp-field {
+  background-color: var(--color-tangerine);
+  background-image:
+    radial-gradient(circle at 78% 30%, rgb(255 255 255 / 0.28), transparent 42%),
+    radial-gradient(rgb(43 15 46 / 0.13) 1.2px, transparent 1.3px);
+  background-size: auto, 22px 22px;
+}
+.lp-field-fade { mask-image: linear-gradient(to bottom, #000 55%, transparent); }
+
+/* scroll reveals */
+[data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.1, 1); transition-delay: var(--d, 0ms); }
+[data-reveal].is-in { opacity: 1; transform: none; }
+
+/* the conversion machine: one cycle per conversion, restarted by React with a new key */
+.lp-cycle { --t: 4.2s; }
+.lp-in { animation: lp-feed var(--t) cubic-bezier(0.5, 0, 0.3, 1) both; }
+.lp-in:nth-child(2) { animation-delay: 80ms; }
+.lp-in:nth-child(3) { animation-delay: 160ms; }
+@keyframes lp-feed {
+  0% { opacity: 0; transform: translateX(-28px) rotate(var(--r, 0deg)); }
+  8%, 36% { opacity: 1; transform: translateX(0) rotate(var(--r, 0deg)); }
+  48%, 100% { opacity: 0; transform: translateX(46px) scale(0.82) rotate(0deg); }
+}
+.lp-bar { animation: lp-fill var(--t) ease-in-out both; }
+@keyframes lp-fill { 0%, 34% { transform: scaleY(0); } 58%, 100% { transform: scaleY(1); } }
+.lp-body { animation: lp-hum var(--t) linear both; }
+@keyframes lp-hum {
+  0%, 38%, 58%, 100% { transform: none; }
+  41%, 47%, 53% { transform: translateY(-1px) rotate(-0.4deg); }
+  44%, 50%, 56% { transform: translateY(1px) rotate(0.4deg); }
+}
+.lp-light { animation: lp-light var(--t) linear both; }
+@keyframes lp-light { 0%, 34% { opacity: 0.25; } 38%, 58% { opacity: 1; } 64%, 100% { opacity: 0.25; } }
+.lp-out { animation: lp-eject var(--t) cubic-bezier(0.2, 0.8, 0.2, 1.1) both; }
+@keyframes lp-eject {
+  0%, 52% { opacity: 0; transform: translateX(-34px) scale(0.86); }
+  62% { opacity: 1; transform: translateX(0) scale(1.03); }
+  68%, 96% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+.lp-stamp { animation: lp-stamp var(--t) cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes lp-stamp {
+  0%, 64% { opacity: 0; transform: scale(1.8) rotate(-18deg); }
+  72%, 96% { opacity: 1; transform: scale(1) rotate(-9deg); }
+  100% { opacity: 0; transform: scale(1) rotate(-9deg); }
+}
+
+/* small hover moves */
+.lp-tool .lp-arrow { transition: transform 0.25s ease; }
+.lp-tool:hover .lp-arrow, .lp-tool:focus-visible .lp-arrow { transform: translate(3px, -3px); }
+.lp-lift { transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.1, 1), box-shadow 0.3s ease; }
+.lp-lift:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -18px rgb(43 15 46 / 0.35); }
+
+/* "how it works": the line between the three steps draws itself */
+.lp-track { transform-origin: left; transform: scaleX(0); transition: transform 1.4s cubic-bezier(0.6, 0, 0.2, 1) 0.2s; }
+.is-in .lp-track, .lp-track.is-in { transform: scaleX(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-rise, .lp-marker, .lp-in, .lp-bar, .lp-body, .lp-light, .lp-out, .lp-stamp { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .lp-marker { background-size: 100% 0.32em; }
+  [data-reveal], .lp-track { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .lp-lift:hover { transform: none; }
+}
