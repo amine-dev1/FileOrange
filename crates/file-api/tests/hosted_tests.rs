@@ -414,6 +414,10 @@ async fn hosts_and_origins_are_checked() {
     assert!(ok.status().is_success(), "{}", ok.status());
     assert_eq!(ok.headers()["access-control-allow-origin"], "https://app.example");
     assert!(ok.headers()["access-control-allow-headers"].to_str().unwrap().contains("authorization"));
+    // the CAPTCHA answer travels in its own header, which a separate site (Netlify) must be allowed to send
+    let cap = h.http.request(reqwest::Method::OPTIONS, h.url("/api/v1/session")).header("origin", "https://app.example").header("access-control-request-method", "POST").header("access-control-request-headers", "x-turnstile-token").send().await.unwrap();
+    assert!(cap.status().is_success(), "{}", cap.status());
+    assert!(cap.headers()["access-control-allow-headers"].to_str().unwrap().contains("x-turnstile-token"), "the CAPTCHA header is allowed across origins");
     let no = pre("https://evil.example").send().await.unwrap();
     assert!(no.headers().get("access-control-allow-origin").is_none(), "nothing is granted to an unlisted origin");
 }

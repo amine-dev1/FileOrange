@@ -102,7 +102,7 @@ fn router(state: AppState) -> Router {
             CorsLayer::new()
                 .allow_origin(origins)
                 .allow_methods([Method::GET, Method::POST, Method::DELETE])
-                .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+                .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE, header::HeaderName::from_static(session_routes::CAPTCHA_HEADER)])
                 .expose_headers([header::CONTENT_DISPOSITION, header::HeaderName::from_static("x-request-id")])
                 .max_age(Duration::from_secs(600)),
         )

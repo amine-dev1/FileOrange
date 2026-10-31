@@ -42,12 +42,22 @@ const site = createServer((req, res) => {
   res.end(readFileSync(file));
 }).listen(SITE_PORT, "127.0.0.1");
 
-const env = { ...process.env, FILE_API_MODE: "hosted", FILE_API_BIND: `127.0.0.1:${API_PORT}`, FILE_API_DATA_DIR: join(work, "data"), FILE_API_SESSION_SECRET: randomBytes(32).toString("hex"), FILE_API_ALLOWED_HOSTS: "127.0.0.1", FILE_API_ALLOWED_ORIGINS: SITE, FILE_API_MAX_FILE_MB: "50", RUST_LOG: "warn" };
+let captchaChecks = 0;
+const checker = createServer((req, res) => {
+  let body = "";
+  req.on("data", (c) => (body += c));
+  req.on("end", () => {
+    captchaChecks++;
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ success: new URLSearchParams(body).get("response") === "test-token" }));
+  });
+}).listen(8798, "127.0.0.1");
+const env = { ...process.env, FILE_API_TURNSTILE_SITE_KEY: "test-site-key", FILE_API_TURNSTILE_SECRET: "test-secret", FILE_API_TURNSTILE_VERIFY_URL: "http://127.0.0.1:8798/siteverify", FILE_API_MODE: "hosted", FILE_API_BIND: `127.0.0.1:${API_PORT}`, FILE_API_DATA_DIR: join(work, "data"), FILE_API_SESSION_SECRET: randomBytes(32).toString("hex"), FILE_API_ALLOWED_HOSTS: "127.0.0.1", FILE_API_ALLOWED_ORIGINS: SITE, FILE_API_MAX_FILE_MB: "50", RUST_LOG: "warn" };
 const pdfium = resolve(root, "src-tauri/resources/pdfium");
 if (!env.ORANGEFILE_PDFIUM && existsSync(pdfium)) env.ORANGEFILE_PDFIUM = pdfium;
 const detached = process.platform !== "win32";
 const engine = spawn(bin, [], { env, stdio: "ignore", detached });
-const cleanup = () => { try { detached ? process.kill(-engine.pid) : engine.kill(); } catch {} site.close(); };
+const cleanup = () => { try { detached ? process.kill(-engine.pid) : engine.kill(); } catch {} site.close(); checker.close(); };
 process.on("exit", cleanup);
 for (let i = 0; i < 120; i++) { try { if ((await fetch(`${API}/health`)).ok) break; } catch {} await new Promise((r) => setTimeout(r, 500)); }
 
@@ -65,6 +75,8 @@ const red = png(join(work, "red.png"), 200, 100);
 
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH, args: ["--no-sandbox"] } : { channel: "msedge" });
 const ctx = await browser.newContext({ acceptDownloads: true });
+// The widget is put in place before the page loads (no request interception, which would bypass the browser's CORS checks).
+await ctx.addInitScript(() => { window.turnstile = { render(_el, o) { setTimeout(() => o.callback("test-token"), 30); return "w1"; }, remove() {} }; });
 const page = await ctx.newPage();
 const problems = [];
 page.on("pageerror", (e) => problems.push("pageerror: " + e.message));
@@ -78,6 +90,7 @@ await page.waitForSelector("main");
 ok(first.headers()["content-security-policy"]?.includes("script-src 'self'"), "the site carries its security headers");
 await page.getByText("Up to 50 MB per file.").waitFor({ timeout: 20_000 });
 ok(true, "the app found the engine, got a session and read its limits across origins");
+ok(captchaChecks > 0, "a new visitor passed the CAPTCHA across origins (the answer header is allowed)");
 ok(toApi.some((u) => u.endsWith("/api/v1/session")) && !toApi.some((u) => u.startsWith(SITE)), "requests go to the engine's address");
 const stored = await page.evaluate(() => localStorage.getItem("orangefile.web.session.v1"));
 ok(/^of1\./.test(stored ?? ""), "the session is kept in the browser");

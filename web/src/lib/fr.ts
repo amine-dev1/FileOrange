@@ -3,6 +3,7 @@
  * Server messages that contain numbers or names are matched by FR_PATTERNS.
  */
 export const FR: Record<string, string> = {
+  "or choose them from your computer. Nothing is uploaded until you start a tool.": "ou choisissez-les sur votre ordinateur. Rien n'est envoyé avant que vous lanciez un outil.",
   "The check that you're a person couldn't load. If an ad or tracker blocker is on, allow challenges.cloudflare.com, then reload.": "La vérification anti-robot n'a pas pu se charger. Si un bloqueur de publicités ou de traceurs est actif, autorisez challenges.cloudflare.com, puis rechargez la page.",
   "Checking that you're a person": "Vérification que vous n'êtes pas un robot",
   "The check that you're a person didn't pass. Try again.": "La vérification anti-robot n'a pas réussi. Réessayez.",

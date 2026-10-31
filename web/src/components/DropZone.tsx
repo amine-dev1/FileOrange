@@ -46,7 +46,7 @@ export function DropZone({ onFiles, accept, multiple = true, folders = false, hi
       </div>
       <div className="flex flex-wrap justify-center gap-2">
         <Button variant="primary" onClick={() => files.current?.click()}>
-          {chooseLabel}
+          {t(chooseLabel)}
         </Button>
         {folders && (
           <Button icon={<FolderUp className="size-4" aria-hidden />} onClick={() => dir.current?.click()}>
@@ -59,7 +59,7 @@ export function DropZone({ onFiles, accept, multiple = true, folders = false, hi
         type="file"
         className="sr-only"
         tabIndex={-1}
-        aria-label={chooseLabel}
+        aria-label={t(chooseLabel)}
         multiple={multiple}
         accept={accept?.length ? accept.map((e) => `.${e}`).join(",") : undefined}
         onChange={(e) => {
