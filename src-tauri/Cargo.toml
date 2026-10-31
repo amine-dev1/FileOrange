@@ -1,0 +1,32 @@
+[package]
+name = "file-tool"
+version = "0.1.0"
+description = "Local file compressor and converter"
+edition = "2021"
+
+[lib]
+name = "file_tool_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["fs", "io-util", "sync", "time"] }
+tokio-util = { version = "0.7", features = ["io"] }
+futures-util = "0.3"
+uuid = { version = "1", features = ["v4"] }
+# Plain HTTP to loopback only; TLS comes with hosted mode.
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "stream"] }
+file-core = { path = "../crates/file-core" }
+file-api = { path = "../crates/file-api" }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tempfile = "3"
+zip = { version = "2", default-features = false, features = ["deflate"] }

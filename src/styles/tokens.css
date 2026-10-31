@@ -1,0 +1,46 @@
+/* Design tokens: the only place colours, radii and type sizes are defined. */
+:root {
+  /* brand */
+  --orange: #f47b20;
+  --orange-hover: #e56d12;
+  --orange-press: #d4620d;
+  --orange-50: #fff6ee;
+  --orange-100: #feeadb;
+  --orange-200: #fbd2b0;
+  /* orange used for small text; #f47b20 is only 2.9:1 on white, this is 5.0:1 on the tinted drop zone */
+  --orange-text: #b04c07;
+  --orange-ink: #a84a07;
+
+  /* neutrals */
+  --bg: #fafaf9;
+  --sidebar: #fdfdfc;
+  --surface: #ffffff;
+  --border: #e8e8ea;
+  --border-strong: #d6d6db;
+  --hover: #f3f3f4;
+  --table-head: #f6f6f7;
+  --text: #1c1e22;
+  --text-body: #3b3f46;
+  --text-muted: #636a75;
+
+  /* status */
+  --green: #1a8f52;
+  --green-bg: #e5f6ec;
+  --red: #c9302a;
+  --red-bg: #fdecea;
+  --gray-bg: #eeeff1;
+  --amber: #9a6100;
+  --amber-bg: #fff4dc;
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --shadow-card: 0 1px 2px rgba(28, 30, 34, 0.04), 0 2px 6px rgba(28, 30, 34, 0.03);
+  --shadow-pop: 0 8px 24px rgba(28, 30, 34, 0.14), 0 1px 3px rgba(28, 30, 34, 0.08);
+
+  --font: "Inter Variable", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  --sidebar-w: 224px;
+  --page-pad-left: 34px;
+  --page-pad-right: 34px;
+}

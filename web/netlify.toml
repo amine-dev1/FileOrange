@@ -1,0 +1,8 @@
+# Netlify settings for the web app. In Netlify set "Base directory" to `web`.
+# Also set the environment variable VITE_API_ORIGIN to your Fly.io address (see ../DEPLOY.md).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

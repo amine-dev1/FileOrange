@@ -1,0 +1,11 @@
+.conflicts { list-style: none; margin: 0 0 14px; padding: 8px 12px; background: var(--table-head); border-radius: var(--radius-md); font-size: 13px; display: flex; flex-direction: column; gap: 3px; max-height: 140px; overflow: auto; }
+.conflicts li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conflicts__more { color: var(--text-muted); }
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.choice { display: flex; gap: 12px; align-items: flex-start; padding: 11px 13px; border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; }
+.choice:hover { background: var(--hover); }
+.choice--on { border-color: var(--orange); background: var(--orange-50); }
+.choice input { margin-top: 3px; accent-color: var(--orange); width: 16px; height: 16px; }
+.choice:has(:focus-visible) { outline: 2px solid var(--orange); outline-offset: 2px; }
+.choice strong { display: block; font-size: 14px; font-weight: 600; }
+.choice small { display: block; font-size: 12.5px; color: var(--text-muted); margin-top: 1px; }

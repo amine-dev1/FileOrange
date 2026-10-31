@@ -1,0 +1,15 @@
+.op-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+/* Sized by the content column, not the window, so it also holds when the sidebar changes width. */
+@container (min-width: 760px) { .op-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@container (max-width: 1000px) {
+  .op-grid .op-card { gap: 12px; padding-left: 14px; padding-right: 12px; }
+  .op-grid .op-card__tile { width: 52px; height: 52px; border-radius: 12px; }
+  .op-grid .op-card__tile svg { width: 26px; height: 26px; }
+  .op-grid .op-card__arrow { display: none; }
+}
+.dash-drop { margin-top: 8px; }
+.section-title { font-size: 18.5px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 -10px 2px; }
+.dash-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dash-actions__label { font-size: 14px; color: var(--text-muted); margin-right: 4px; }
+.dash-why { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-muted); }
+.dash-why strong { color: var(--text-body); font-weight: 600; }

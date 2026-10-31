@@ -1,0 +1,19 @@
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 18px; border-radius: var(--radius-md);
+  border: 1px solid transparent; font-weight: 600; font-size: 14px; white-space: nowrap;
+  transition: background 120ms, border-color 120ms, box-shadow 120ms;
+}
+.btn--sm { height: 32px; padding: 0 12px; font-size: 13px; border-radius: var(--radius-sm); }
+/* Dark text on brand orange: white on #f47b20 would be only 2.9:1. */
+.btn--primary { background: var(--orange); color: var(--text); }
+.btn--primary:hover:not(:disabled) { background: var(--orange-hover); }
+.btn--primary:active:not(:disabled) { background: var(--orange-press); }
+.btn--secondary { background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+.btn--secondary:hover:not(:disabled) { background: var(--hover); }
+.btn--ghost { background: transparent; color: var(--text-body); }
+.btn--ghost:hover:not(:disabled) { background: var(--hover); }
+.btn--danger { background: var(--surface); border-color: #efc3bf; color: var(--red); }
+.btn--danger:hover:not(:disabled) { background: var(--red-bg); }
+.btn:disabled { opacity: 0.5; }
+.btn:focus-visible { outline-offset: 2px; border-radius: var(--radius-md); }

@@ -1,0 +1,12 @@
+.dialog-scrim { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(28, 30, 34, 0.38); }
+.dialog {
+  width: min(520px, 100%); max-height: calc(100vh - 48px); display: flex; flex-direction: column;
+  background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
+}
+.dialog__head { display: flex; justify-content: space-between; gap: 16px; padding: 20px 20px 4px; }
+.dialog__head h2 { font-size: 17px; font-weight: 700; }
+.dialog__head p { margin-top: 4px; color: var(--text-muted); font-size: 13.5px; }
+.dialog__close { width: 32px; height: 32px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 8px; color: var(--text-muted); }
+.dialog__close:hover { background: var(--hover); }
+.dialog__body { padding: 12px 20px; overflow: auto; }
+.dialog__foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px 20px; flex-wrap: wrap; }

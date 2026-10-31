@@ -1,0 +1,4 @@
+.empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 36px 16px; gap: 6px; }
+.empty__icon { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 14px; background: var(--orange-50); color: var(--orange); margin-bottom: 6px; }
+.empty h3 { font-size: 15px; font-weight: 600; }
+.empty p { font-size: 13.5px; color: var(--text-muted); max-width: 380px; }

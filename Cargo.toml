@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = ["crates/file-core", "crates/file-api", "src-tauri"]
+# `cargo test` at the root only builds the engine, so CI and contributors
+# without the WebView system libraries can still run the test suite.
+default-members = ["crates/file-core", "crates/file-api"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/* Dark mode follows the `dark` class on <html>, set by ThemeProvider (system by default). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --color-brand-50: #fff4e6;
+  --color-brand-100: #ffe8cc;
+  --color-brand-200: #ffd8a8;
+  --color-brand-300: #ffc078;
+  --color-brand-400: #ffa94d;
+  --color-brand-500: #ff922b;
+  --color-brand-600: #e8590c;
+  --color-brand-700: #c2410c;
+  --color-brand-800: #9a3412;
+  --color-brand-900: #7c2d12;
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body { @apply bg-slate-50 text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-brand-600 dark:outline-brand-400; }
+  ::selection { @apply bg-brand-200 text-slate-900; }
+}
+
+@keyframes shimmer { to { background-position: -200% 0; } }
+.skeleton { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+.dark .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
+@media (prefers-reduced-motion: reduce) { .skeleton, .animate-spin { animation: none !important; } }

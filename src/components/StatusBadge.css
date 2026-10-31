@@ -1,0 +1,14 @@
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; height: 27px; padding: 0 11px 0 9px;
+  border-radius: 999px; font-size: 13px; font-weight: 500; white-space: nowrap;
+}
+.badge--done { background: var(--green-bg); color: #137a43; }
+.badge--failed { background: var(--red-bg); color: #b0231d; }
+.badge--cancelled { background: var(--gray-bg); color: var(--text-muted); }
+.badge--active { background: var(--orange-100); color: var(--orange-ink); }
+.badge__spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--orange-200); border-top-color: var(--orange);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

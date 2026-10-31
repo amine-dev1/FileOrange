@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Drag wheel probe</title>
+<style>
+ body{font:14px system-ui,sans-serif;margin:16px;color:#1c1e22}
+ h1{font-size:18px;margin:0 0 6px} p{margin:6px 0;color:#444}
+ #log{white-space:pre-wrap;font:12px/1.45 ui-monospace,Consolas,monospace;background:#111;color:#e8e8e8;padding:10px;border-radius:8px;height:360px;overflow:auto}
+ input{font:inherit;padding:4px 8px;width:200px} button{font:inherit;padding:4px 12px}
+ #msg{margin-left:8px}
+</style></head><body>
+<h1>OrangeFile drag wheel · Phase 0 probe</h1>
+<p>1. Close this window (it hides to the tray; the probe keeps running). 2. In Explorer, start dragging a file or folder and keep the mouse button held. 3. Press the shortcut. 4. Move onto the wheel and drop on a quarter. Everything seen is logged below and in <code>%TEMP%\dragwheel-probe.log</code>.</p>
+<p>Shortcut: <input id="sc" value="Ctrl+Shift+Space"> <button id="set">Register</button><span id="msg"></span></p>
+<div id="log" tabindex="0" role="log" aria-label="Probe log"></div>
+<script>
+ const {listen}=window.__TAURI__.event, {invoke}=window.__TAURI__.core, out=document.getElementById('log');
+ listen('probe-log',e=>{out.textContent+=e.payload+'\n';out.scrollTop=out.scrollHeight});
+ invoke('current_shortcut').then(s=>{if(s)document.getElementById('sc').value=s});
+ document.getElementById('set').onclick=()=>invoke('set_shortcut',{spec:document.getElementById('sc').value}).then(m=>msg(m,'#161'),e=>msg(e,'#b00'));
+ function msg(t,c){const m=document.getElementById('msg');m.textContent=t;m.style.color=c}
+</script></body></html>

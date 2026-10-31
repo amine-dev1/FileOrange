@@ -1,0 +1,4 @@
+.colour-field { display: flex; align-items: center; gap: 12px; }
+.colour-field input[type="color"] { width: 44px; height: 36px; padding: 2px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; }
+.colour-field input[type="color"]:disabled { opacity: 0.5; cursor: not-allowed; }
+.colour-field code { font-size: 13px; color: var(--text-body); }

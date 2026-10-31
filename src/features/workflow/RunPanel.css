@@ -1,0 +1,13 @@
+.run { display: flex; flex-direction: column; gap: 14px; padding: 22px; }
+.run__head { display: flex; align-items: center; gap: 14px; }
+.run__text { flex: 1; min-width: 0; }
+.run__text h2 { font-size: 18px; font-weight: 700; }
+.run__text p { font-size: 13.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.run__spinner { width: 30px; height: 30px; border-radius: 50%; border: 3.5px solid var(--orange-100); border-top-color: var(--orange); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.run__pct { font-size: 13px; color: var(--text-muted); font-variant-numeric: tabular-nums; margin-top: -6px; }
+.run__ok { color: var(--green); }
+.run__bad { color: var(--red); }
+.run__muted { color: var(--text-muted); }
+.run__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.run__inline { font-weight: 600; }

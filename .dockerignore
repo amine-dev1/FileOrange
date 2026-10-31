@@ -1,0 +1,14 @@
+target
+node_modules
+web/node_modules
+web/dist
+web/test-results
+dist
+src-tauri/target
+src-tauri/gen
+src-tauri/resources/pdfium/*
+src-tauri/resources/libreoffice/*
+tests/ui/out
+*.zip
+.git
+prototypes

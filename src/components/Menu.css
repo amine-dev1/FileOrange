@@ -1,0 +1,22 @@
+.menu { position: relative; display: inline-block; }
+.menu__trigger {
+  display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--text-muted);
+}
+.menu__trigger:hover, .menu__trigger[aria-expanded="true"] { background: var(--hover); color: var(--text); }
+.menu__list {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 200px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-pop);
+  display: flex; flex-direction: column;
+}
+.menu__list--up { top: auto; bottom: calc(100% + 4px); }
+.menu__item {
+  display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 6px;
+  background: transparent; text-align: left; font-size: 13.5px; color: var(--text);
+}
+.menu__item:hover, .menu__item:focus-visible { background: var(--orange-50); outline: none; }
+.menu__item[aria-disabled="true"] { color: #9a9ea6; cursor: not-allowed; }
+.menu__item[aria-disabled="true"]:hover { background: transparent; }
+.menu__item--danger { color: var(--red); }
+.menu__item svg { color: var(--text-muted); }
+.menu__item--danger svg { color: var(--red); }

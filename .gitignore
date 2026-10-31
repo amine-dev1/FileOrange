@@ -1,0 +1,15 @@
+node_modules
+dist
+target
+src-tauri/gen
+*.log
+tests/ui/out
+src-tauri/resources/pdfium/*
+!src-tauri/resources/pdfium/README.txt
+src-tauri/resources/libreoffice/*
+!src-tauri/resources/libreoffice/README.txt
+scripts/.cache
+*.zip
+test-results
+.env
+.env.local

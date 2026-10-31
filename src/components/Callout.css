@@ -1,0 +1,10 @@
+.callout { display: flex; gap: 10px; padding: 11px 14px; border-radius: var(--radius-md); font-size: 13.5px; line-height: 1.45; border: 1px solid; }
+.callout svg { margin-top: 2px; }
+.callout strong { display: block; font-weight: 600; }
+.callout__body ul { margin: 2px 0 0; padding-left: 18px; }
+.callout--info { background: var(--orange-50); border-color: var(--orange-100); color: #5a3a1e; }
+.callout--info svg { color: var(--orange); }
+.callout--warning { background: var(--amber-bg); border-color: #f4dfae; color: #5d3d00; }
+.callout--warning svg { color: var(--amber); }
+.callout--error { background: var(--red-bg); border-color: #f4c9c5; color: #7a1d19; }
+.callout--error svg { color: var(--red); }

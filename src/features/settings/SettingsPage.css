@@ -1,0 +1,16 @@
+.settings-note { margin-top: 8px; }
+.select { appearance: auto; max-width: 320px; }
+.about { display: grid; grid-template-columns: 200px 1fr; gap: 10px 16px; margin: 0; font-size: 14px; }
+.about dt { color: var(--text-muted); }
+.about dd { margin: 0; }
+.dot { display: inline-flex; align-items: center; gap: 8px; }
+.dot::before { content: ""; width: 9px; height: 9px; border-radius: 50%; }
+.dot--ok::before { background: var(--green); }
+.dot--bad::before { background: var(--red); }
+.engine-list { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; }
+.engine-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 2px; border-bottom: 1px solid #efeff1; }
+.engine-list li:last-child { border-bottom: 0; }
+.engine-list li > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.engine-list strong { font-size: 14px; font-weight: 600; }
+.engine-list span:not(.reason) { font-size: 12.5px; color: var(--text-muted); }
+.settings-links { display: flex; gap: 8px; flex-wrap: wrap; }

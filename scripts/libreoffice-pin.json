@@ -1,0 +1,6 @@
+{
+  "_about": "Which LibreOffice ships inside the OrangeFile installer. Fill in sha256, then commit. See scripts/get-libreoffice.mjs.",
+  "version": "24.8.4",
+  "url": "https://downloadarchive.documentfoundation.org/libreoffice/old/24.8.4.2/win/x86_64/LibreOffice_24.8.4.2_Win_x86-64.msi",
+  "sha256": ""
+}

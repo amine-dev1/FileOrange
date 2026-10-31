@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>overlay</title>
+<style>
+ html,body{margin:0;height:100%;background:transparent;overflow:hidden;user-select:none;font:600 15px system-ui,sans-serif}
+ #wheel{position:absolute;inset:6px;border-radius:50%;background:rgba(255,255,255,.18);box-shadow:0 8px 30px rgba(0,0,0,.35),inset 0 0 0 1.5px rgba(255,255,255,.55);overflow:hidden}
+ .seg{position:absolute;width:50%;height:50%;display:flex;align-items:center;justify-content:center;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);
+      background:rgba(30,30,34,.45);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+ .seg.on{background:rgba(244,123,32,.85)}
+ #tl{left:0;top:0}#tr{left:50%;top:0}#bl{left:0;top:50%}#br{left:50%;top:50%}
+ #hub{position:absolute;left:50%;top:50%;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;background:rgba(20,20,24,.7);color:#fff;
+      display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:500;padding:6px;box-sizing:border-box;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+ #hint{position:absolute;bottom:0;left:0;right:0;text-align:center;color:#fff;font:500 11px system-ui;text-shadow:0 1px 3px #000}
+</style></head><body>
+<div id="wheel"><div class="seg" id="tl">A</div><div class="seg" id="tr">B</div><div class="seg" id="bl">C</div><div class="seg" id="br">D</div><div id="hub">drag<br>here</div></div>
+<div id="hint">Drop on an action • Esc to cancel</div>
+<script>
+ const {invoke}=window.__TAURI__.core, {listen}=window.__TAURI__.event;
+ const log=m=>invoke('probe_log',{message:'overlay: '+m});
+ const segs={tl:'A',tr:'B',bl:'C',br:'D'}; let paths=[], overs=0, lastHit=null;
+ // The drop events are the OS's (wry's IDropTarget on this window), not HTML5 drag events.
+ const hit=p=>{ // p is in physical pixels relative to the webview
+   const x=p.x/devicePixelRatio, y=p.y/devicePixelRatio, w=innerWidth, h=innerHeight, cx=w/2, cy=h/2;
+   const dx=x-cx, dy=y-cy, r=Math.hypot(dx,dy);
+   if(r>Math.min(w,h)/2-6) return null;            // outside the wheel
+   if(r<46) return 'hub';
+   return (dy<0?'t':'b')+(dx<0?'l':'r');
+ };
+ const mark=id=>{for(const k in segs)document.getElementById(k).classList.toggle('on',k===id)};
+ window.__TAURI__.webview.getCurrentWebview().onDragDropEvent(async e=>{
+   const t=e.payload.type;
+   if(t==='enter'){paths=e.payload.paths;overs=0;log('DRAG ENTER '+paths.length+' path(s) at '+JSON.stringify(e.payload.position)+': '+JSON.stringify(paths))}
+   else if(t==='over'){overs++;const h=hit(e.payload.position);if(h!==lastHit){lastHit=h;log('over -> '+h+' (event #'+overs+')')}mark(h)}
+   else if(t==='leave'){log('DRAG LEAVE after '+overs+' over events');mark(null);lastHit=null}
+   else if(t==='drop'){const h=hit(e.payload.position);log('DROP at '+JSON.stringify(e.payload.position)+' zone='+h+' paths='+JSON.stringify(e.payload.paths));
+     mark(null);
+     if(h&&segs[h]) await invoke('probe_drop',{paths:e.payload.paths,action:segs[h]});
+     else {log('dropped outside an action: cancelled');await invoke('overlay_hide',{reason:'drop outside the wheel / on the hub'})}}
+ });
+ window.addEventListener('keydown',e=>{log('keydown '+e.key+' reached the overlay');if(e.key==='Escape')invoke('overlay_hide',{reason:'escape (overlay got it)'})});
+ listen('overlay-reset',()=>{mark(null);paths=[];lastHit=null});
+ log('overlay page loaded; devicePixelRatio='+devicePixelRatio+' inner='+innerWidth+'x'+innerHeight);
+</script></body></html>

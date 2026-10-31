@@ -1,0 +1,5 @@
+.winctl { position: absolute; top: 0; right: 0; display: flex; z-index: 30; }
+.winctl__btn { width: 46px; height: 38px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text-body); }
+.winctl__btn:hover { background: var(--hover); }
+.winctl__btn--close:hover { background: #e5352c; color: #fff; }
+.winctl__btn:focus-visible { outline-offset: -3px; border-radius: 0; }

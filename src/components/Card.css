@@ -1,0 +1,19 @@
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 17px; box-shadow: var(--shadow-card); }
+.card__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.card__head h2 { font-size: 18.5px; font-weight: 700; letter-spacing: -0.01em; }
+.link-btn { padding: 4px 6px; margin-right: -6px; border: 0; background: none; font-size: 13.5px; font-weight: 600; color: var(--orange-text); display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; }
+.link-btn:hover:not(:disabled) { color: var(--orange-ink); background: var(--orange-50); }
+.link-btn:disabled { opacity: 0.5; }
+.card-stack { display: flex; flex-direction: column; gap: 18px; }
+.options-grid { display: flex; flex-direction: column; gap: 18px; }
+.action-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.action-bar__note { font-size: 13px; color: var(--text-muted); }
+/* Keeps the primary button reachable on long forms. It sits flush with the window
+   edge and spans the page width, so nothing scrolls into view beneath it. */
+.action-bar--sticky {
+  position: sticky; bottom: -32px; z-index: 4;
+  margin: 2px calc(-1 * var(--page-pad-right)) -32px calc(-1 * var(--page-pad-left));
+  padding: 14px var(--page-pad-right) 22px var(--page-pad-left);
+  background: var(--bg); border-top: 1px solid var(--border);
+}
+.link-btn--flush { margin: 0 0 0 -6px; font-size: 13.5px; }

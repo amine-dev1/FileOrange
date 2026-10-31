@@ -1,0 +1,865 @@
+{
+  "schema": 1,
+  "engines": [
+    {
+      "id": "zip",
+      "name": "ZIP archives",
+      "version": "zip crate 2.6.1",
+      "availability": {
+        "status": "bundled"
+      },
+      "license": "MIT",
+      "operations": [
+        "compress",
+        "extract"
+      ]
+    },
+    {
+      "id": "image",
+      "name": "Images (JPG, PNG, WEBP)",
+      "version": "image crate 0.25.10 + libwebp 1.3.1",
+      "availability": {
+        "status": "bundled"
+      },
+      "license": "MIT OR Apache-2.0 (image crate); BSD-3-Clause (libwebp)",
+      "operations": [
+        "convert_image"
+      ]
+    },
+    {
+      "id": "pdf",
+      "name": "PDF tools (PDFium)",
+      "version": "unknown",
+      "availability": {
+        "status": "unavailable",
+        "reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+      },
+      "license": "BSD-3-Clause AND Apache-2.0",
+      "operations": [
+        "pdf_view",
+        "pdf_merge",
+        "pdf_split",
+        "images_to_pdf",
+        "pdf_to_images",
+        "pdf_annotate",
+        "pdf_reorder",
+        "pdf_rotate",
+        "pdf_delete_pages",
+        "pdf_extract_pages"
+      ]
+    },
+    {
+      "id": "office",
+      "name": "Office documents (LibreOffice)",
+      "version": "LibreOffice 24.2.7.2 420(Build:2)",
+      "availability": {
+        "status": "installed"
+      },
+      "license": "MPL-2.0 (and the licences of the libraries inside LibreOffice)",
+      "operations": [
+        "office_to_pdf"
+      ]
+    }
+  ],
+  "operations": [
+    {
+      "id": "compress",
+      "label": "Compress to ZIP",
+      "description": "Pack files and folders into one ZIP archive (Deflate).",
+      "inputs": [],
+      "outputs": [
+        "zip"
+      ],
+      "pairs": [],
+      "options": [
+        {
+          "id": "archive_name",
+          "label": "Archive name",
+          "help": "Leave blank to name it after your files.",
+          "kind": {
+            "type": "text",
+            "max_len": 120
+          },
+          "applies_to": []
+        },
+        {
+          "id": "include_folders",
+          "label": "Include folders",
+          "help": null,
+          "kind": {
+            "type": "bool",
+            "default": true
+          },
+          "applies_to": []
+        }
+      ],
+      "interactive": false,
+      "engine": "zip",
+      "available": true,
+      "unavailable_reason": null
+    },
+    {
+      "id": "extract",
+      "label": "Extract ZIP",
+      "description": "Open ZIP archives into a folder. Unsafe paths are refused and expansion is capped.",
+      "inputs": [
+        "zip"
+      ],
+      "outputs": [],
+      "pairs": [],
+      "options": [
+        {
+          "id": "password",
+          "label": "Password",
+          "help": "Only needed for encrypted archives. Never stored.",
+          "kind": {
+            "type": "secret"
+          },
+          "applies_to": []
+        },
+        {
+          "id": "subfolder",
+          "label": "Put files in a folder named after the archive",
+          "help": null,
+          "kind": {
+            "type": "bool",
+            "default": true
+          },
+          "applies_to": []
+        }
+      ],
+      "interactive": false,
+      "engine": "zip",
+      "available": true,
+      "unavailable_reason": null
+    },
+    {
+      "id": "convert_image",
+      "label": "Convert images",
+      "description": "Convert between JPG, PNG and WEBP. Originals are never changed.",
+      "inputs": [
+        "jpeg",
+        "png",
+        "webp"
+      ],
+      "outputs": [
+        "jpeg",
+        "png",
+        "webp"
+      ],
+      "pairs": [
+        {
+          "from": "jpeg",
+          "to": "jpeg",
+          "notes": [
+            "JPG is lossy: each save reduces quality slightly.",
+            "Same format: the image is re-encoded (useful to remove metadata or change quality)."
+          ]
+        },
+        {
+          "from": "jpeg",
+          "to": "png",
+          "notes": [
+            "PNG is lossless, so the file is usually larger and lost quality does not come back."
+          ]
+        },
+        {
+          "from": "jpeg",
+          "to": "webp",
+          "notes": [
+            "WebP can be lossy (smaller files) or lossless (exact pixels). Transparency is kept."
+          ]
+        },
+        {
+          "from": "png",
+          "to": "jpeg",
+          "notes": [
+            "JPG is lossy: each save reduces quality slightly.",
+            "Transparent areas are filled with a solid background colour (white by default)."
+          ]
+        },
+        {
+          "from": "png",
+          "to": "png",
+          "notes": [
+            "Same format: the image is re-encoded (useful to remove metadata or change quality)."
+          ]
+        },
+        {
+          "from": "png",
+          "to": "webp",
+          "notes": [
+            "WebP can be lossy (smaller files) or lossless (exact pixels). Transparency is kept."
+          ]
+        },
+        {
+          "from": "webp",
+          "to": "jpeg",
+          "notes": [
+            "JPG is lossy: each save reduces quality slightly.",
+            "Transparent areas are filled with a solid background colour (white by default)."
+          ]
+        },
+        {
+          "from": "webp",
+          "to": "png",
+          "notes": [
+            "PNG is lossless, so the file is usually larger and lost quality does not come back."
+          ]
+        },
+        {
+          "from": "webp",
+          "to": "webp",
+          "notes": [
+            "WebP can be lossy (smaller files) or lossless (exact pixels). Transparency is kept.",
+            "Same format: the image is re-encoded (useful to remove metadata or change quality)."
+          ]
+        }
+      ],
+      "options": [
+        {
+          "id": "webp_mode",
+          "label": "WebP mode",
+          "help": "Lossy makes smaller files. Lossless keeps every pixel exactly.",
+          "kind": {
+            "type": "choice",
+            "choices": [
+              {
+                "value": "lossy",
+                "label": "Lossy (smaller)"
+              },
+              {
+                "value": "lossless",
+                "label": "Lossless (exact)"
+              }
+            ],
+            "default": "lossy"
+          },
+          "applies_to": [
+            {
+              "format": "webp",
+              "when": null
+            }
+          ]
+        },
+        {
+          "id": "quality",
+          "label": "Quality",
+          "help": "Higher looks better but makes bigger files.",
+          "kind": {
+            "type": "int",
+            "min": 1,
+            "max": 100,
+            "default": 85
+          },
+          "applies_to": [
+            {
+              "format": "jpeg",
+              "when": null
+            },
+            {
+              "format": "webp",
+              "when": {
+                "option": "webp_mode",
+                "equals": "lossy"
+              }
+            }
+          ]
+        },
+        {
+          "id": "background",
+          "label": "Background for transparent areas",
+          "help": "JPG can't store transparency, so transparent areas are filled with this colour.",
+          "kind": {
+            "type": "color",
+            "default": "#FFFFFF"
+          },
+          "applies_to": [
+            {
+              "format": "jpeg",
+              "when": null
+            }
+          ]
+        },
+        {
+          "id": "keep_metadata",
+          "label": "Keep photo information",
+          "help": "Camera details and location (EXIF). Off by default for privacy. The colour profile is always kept.",
+          "kind": {
+            "type": "bool",
+            "default": false
+          },
+          "applies_to": []
+        }
+      ],
+      "interactive": false,
+      "engine": "image",
+      "available": true,
+      "unavailable_reason": null
+    },
+    {
+      "id": "pdf_view",
+      "label": "View PDF pages",
+      "description": "Open a PDF to see its pages as thumbnails and a large preview.",
+      "inputs": [
+        "pdf"
+      ],
+      "outputs": [],
+      "pairs": [],
+      "options": [],
+      "interactive": true,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "pdf_merge",
+      "label": "Merge PDFs",
+      "description": "Combine several PDFs into one, in the order you choose.",
+      "inputs": [
+        "pdf"
+      ],
+      "outputs": [
+        "pdf"
+      ],
+      "pairs": [],
+      "options": [
+        {
+          "id": "output_name",
+          "label": "File name",
+          "help": "Name of the merged PDF. Default: merged.pdf.",
+          "kind": {
+            "type": "text",
+            "max_len": 120
+          },
+          "applies_to": []
+        },
+        {
+          "id": "password",
+          "label": "Password",
+          "help": "Only if a PDF is password-protected. Used for this job only and never saved. The new PDF is not protected.",
+          "kind": {
+            "type": "secret"
+          },
+          "applies_to": []
+        }
+      ],
+      "interactive": false,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "pdf_split",
+      "label": "Split PDF",
+      "description": "Split one PDF into several, by number of pages or by page ranges.",
+      "inputs": [
+        "pdf"
+      ],
+      "outputs": [
+        "pdf"
+      ],
+      "pairs": [],
+      "options": [
+        {
+          "id": "mode",
+          "label": "Split by",
+          "help": null,
+          "kind": {
+            "type": "choice",
+            "choices": [
+              {
+                "value": "every",
+                "label": "Pages per file"
+              },
+              {
+                "value": "ranges",
+                "label": "Page ranges"
+              }
+            ],
+            "default": "every"
+          },
+          "applies_to": []
+        },
+        {
+          "id": "every",
+          "label": "Pages per file",
+          "help": "1 makes one file per page.",
+          "kind": {
+            "type": "int",
+            "min": 1,
+            "max": 50000,
+            "default": 1
+          },
+          "applies_to": []
+        },
+        {
+          "id": "ranges",
+          "label": "Page ranges",
+          "help": "One new file per range, for example 1-3, 4, 7-. A trailing dash means to the end.",
+          "kind": {
+            "type": "text",
+            "max_len": 2000
+          },
+          "applies_to": []
+        },
+        {
+          "id": "password",
+          "label": "Password",
+          "help": "Only if a PDF is password-protected. Used for this job only and never saved. The new PDF is not protected.",
+          "kind": {
+            "type": "secret"
+          },
+          "applies_to": []
+        }
+      ],
+      "interactive": false,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "images_to_pdf",
+      "label": "Images to PDF",
+      "description": "Put pictures on pages, one per picture, in the order you choose.",
+      "inputs": [
+        "jpeg",
+        "png",
+        "webp"
+      ],
+      "outputs": [
+        "pdf"
+      ],
+      "pairs": [],
+      "options": [
+        {
+          "id": "paper",
+          "label": "Page size",
+          "help": null,
+          "kind": {
+            "type": "choice",
+            "choices": [
+              {
+                "value": "a4",
+                "label": "A4"
+              },
+              {
+                "value": "letter",
+                "label": "US Letter"
+              },
+              {
+                "value": "fit",
+                "label": "Same size as the picture"
+              }
+            ],
+            "default": "a4"
+          },
+          "applies_to": []
+        },
+        {
+          "id": "orientation",
+          "label": "Orientation",
+          "help": "Automatic follows each picture's shape. Only used for A4 and Letter.",
+          "kind": {
+            "type": "choice",
+            "choices": [
+              {
+                "value": "auto",
+                "label": "Automatic"
+              },
+              {
+                "value": "portrait",
+                "label": "Portrait"
+              },
+              {
+                "value": "landscape",
+                "label": "Landscape"
+              }
+            ],
+            "default": "auto"
+          },
+          "applies_to": []
+        },
+        {
+          "id": "margin_mm",
+          "label": "Margin (mm)",
+          "help": null,
+          "kind": {
+            "type": "int",
+            "min": 0,
+            "max": 100,
+            "default": 10
+          },
+          "applies_to": []
+        },
+        {
+          "id": "output_name",
+          "label": "File name",
+          "help": "Name of the PDF. Default: the picture's name, or \u201cimages\u201d.",
+          "kind": {
+            "type": "text",
+            "max_len": 120
+          },
+          "applies_to": []
+        }
+      ],
+      "interactive": false,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "pdf_to_images",
+      "label": "PDF pages to images",
+      "description": "Save pages of a PDF as pictures at the resolution you choose.",
+      "inputs": [
+        "pdf"
+      ],
+      "outputs": [
+        "png",
+        "jpeg",
+        "webp"
+      ],
+      "pairs": [
+        {
+          "from": "pdf",
+          "to": "png",
+          "notes": []
+        },
+        {
+          "from": "pdf",
+          "to": "jpeg",
+          "notes": [
+            "Lossy: quality is reduced slightly."
+          ]
+        },
+        {
+          "from": "pdf",
+          "to": "webp",
+          "notes": [
+            "Lossy: quality is reduced slightly."
+          ]
+        }
+      ],
+      "options": [
+        {
+          "id": "dpi",
+          "label": "Resolution (dpi)",
+          "help": "150 is good for screens, 300 for printing. Very large pages are drawn smaller than asked.",
+          "kind": {
+            "type": "int",
+            "min": 36,
+            "max": 600,
+            "default": 150
+          },
+          "applies_to": []
+        },
+        {
+          "id": "pages",
+          "label": "Pages",
+          "help": "For example 1-3, 5, 9-. Leave empty for every page.",
+          "kind": {
+            "type": "text",
+            "max_len": 2000
+          },
+          "applies_to": []
+        },
+        {
+          "id": "quality",
+          "label": "Quality",
+          "help": "Higher looks better but makes bigger files.",
+          "kind": {
+            "type": "int",
+            "min": 1,
+            "max": 100,
+            "default": 90
+          },
+          "applies_to": [
+            {
+              "format": "jpeg",
+              "when": null
+            },
+            {
+              "format": "webp",
+              "when": null
+            }
+          ]
+        },
+        {
+          "id": "password",
+          "label": "Password",
+          "help": "Only if a PDF is password-protected. Used for this job only and never saved. The new PDF is not protected.",
+          "kind": {
+            "type": "secret"
+          },
+          "applies_to": []
+        }
+      ],
+      "interactive": false,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "pdf_annotate",
+      "label": "Annotate PDF",
+      "description": "Highlight, underline, draw, add notes, text, shapes and pictures, then save a copy.",
+      "inputs": [
+        "pdf"
+      ],
+      "outputs": [
+        "pdf"
+      ],
+      "pairs": [],
+      "options": [],
+      "interactive": true,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "pdf_reorder",
+      "label": "Reorder pages",
+      "description": "Move pages into a new order and save a copy.",
+      "inputs": [
+        "pdf"
+      ],
+      "outputs": [
+        "pdf"
+      ],
+      "pairs": [],
+      "options": [],
+      "interactive": true,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "pdf_rotate",
+      "label": "Rotate pages",
+      "description": "Turn pages by 90, 180 or 270 degrees and save a copy.",
+      "inputs": [
+        "pdf"
+      ],
+      "outputs": [
+        "pdf"
+      ],
+      "pairs": [],
+      "options": [],
+      "interactive": true,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "pdf_delete_pages",
+      "label": "Delete pages",
+      "description": "Leave pages out and save a copy.",
+      "inputs": [
+        "pdf"
+      ],
+      "outputs": [
+        "pdf"
+      ],
+      "pairs": [],
+      "options": [],
+      "interactive": true,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "pdf_extract_pages",
+      "label": "Extract pages",
+      "description": "Save chosen pages as a new PDF.",
+      "inputs": [
+        "pdf"
+      ],
+      "outputs": [
+        "pdf"
+      ],
+      "pairs": [],
+      "options": [],
+      "interactive": true,
+      "engine": "pdf",
+      "available": false,
+      "unavailable_reason": "The PDF engine file (libpdfium.so) is missing from this installation. Reinstalling OrangeFile restores it."
+    },
+    {
+      "id": "office_to_pdf",
+      "label": "Word, Excel and PowerPoint to PDF",
+      "description": "Turn documents into PDFs. Layout and fonts can differ slightly from Microsoft Office, because LibreOffice draws them.",
+      "inputs": [
+        "docx",
+        "doc",
+        "odt",
+        "rtf",
+        "xlsx",
+        "xls",
+        "ods",
+        "pptx",
+        "ppt",
+        "odp"
+      ],
+      "outputs": [
+        "pdf"
+      ],
+      "pairs": [],
+      "options": [],
+      "interactive": false,
+      "engine": "office",
+      "available": true,
+      "unavailable_reason": null
+    }
+  ],
+  "formats": [
+    {
+      "id": "zip",
+      "label": "ZIP",
+      "extensions": [
+        "zip"
+      ],
+      "mime": "application/zip",
+      "kind": "archive"
+    },
+    {
+      "id": "jpeg",
+      "label": "JPG",
+      "extensions": [
+        "jpg",
+        "jpeg"
+      ],
+      "mime": "image/jpeg",
+      "kind": "image"
+    },
+    {
+      "id": "png",
+      "label": "PNG",
+      "extensions": [
+        "png"
+      ],
+      "mime": "image/png",
+      "kind": "image"
+    },
+    {
+      "id": "webp",
+      "label": "WEBP",
+      "extensions": [
+        "webp"
+      ],
+      "mime": "image/webp",
+      "kind": "image"
+    },
+    {
+      "id": "pdf",
+      "label": "PDF",
+      "extensions": [
+        "pdf"
+      ],
+      "mime": "application/pdf",
+      "kind": "pdf"
+    },
+    {
+      "id": "docx",
+      "label": "Word (DOCX)",
+      "extensions": [
+        "docx"
+      ],
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "kind": "document"
+    },
+    {
+      "id": "doc",
+      "label": "Word 97-2003 (DOC)",
+      "extensions": [
+        "doc"
+      ],
+      "mime": "application/msword",
+      "kind": "document"
+    },
+    {
+      "id": "odt",
+      "label": "OpenDocument Text (ODT)",
+      "extensions": [
+        "odt"
+      ],
+      "mime": "application/vnd.oasis.opendocument.text",
+      "kind": "document"
+    },
+    {
+      "id": "rtf",
+      "label": "Rich Text (RTF)",
+      "extensions": [
+        "rtf"
+      ],
+      "mime": "application/rtf",
+      "kind": "document"
+    },
+    {
+      "id": "xlsx",
+      "label": "Excel (XLSX)",
+      "extensions": [
+        "xlsx"
+      ],
+      "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "kind": "document"
+    },
+    {
+      "id": "xls",
+      "label": "Excel 97-2003 (XLS)",
+      "extensions": [
+        "xls"
+      ],
+      "mime": "application/vnd.ms-excel",
+      "kind": "document"
+    },
+    {
+      "id": "ods",
+      "label": "OpenDocument Spreadsheet (ODS)",
+      "extensions": [
+        "ods"
+      ],
+      "mime": "application/vnd.oasis.opendocument.spreadsheet",
+      "kind": "document"
+    },
+    {
+      "id": "pptx",
+      "label": "PowerPoint (PPTX)",
+      "extensions": [
+        "pptx"
+      ],
+      "mime": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "kind": "document"
+    },
+    {
+      "id": "ppt",
+      "label": "PowerPoint 97-2003 (PPT)",
+      "extensions": [
+        "ppt"
+      ],
+      "mime": "application/vnd.ms-powerpoint",
+      "kind": "document"
+    },
+    {
+      "id": "odp",
+      "label": "OpenDocument Presentation (ODP)",
+      "extensions": [
+        "odp"
+      ],
+      "mime": "application/vnd.oasis.opendocument.presentation",
+      "kind": "document"
+    }
+  ],
+  "limits": {
+    "max_archive_entries": 200000,
+    "default_max_extract_bytes": 21474836480,
+    "max_image_dimension": 32768,
+    "max_webp_dimension": 16383,
+    "max_pdf_render_width": 4096,
+    "max_file_bytes": 8589934592,
+    "max_request_bytes": 17179869184,
+    "max_files": 500,
+    "max_concurrent_jobs": 2,
+    "retention_seconds": 900
+  }
+}
