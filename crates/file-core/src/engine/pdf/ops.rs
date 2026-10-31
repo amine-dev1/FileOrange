@@ -645,7 +645,7 @@ fn pdf_to_images(host: &PdfHost, req: &JobRequest, o: &PdfToImagesOptions, ctx: 
     }
     let total: usize = plans.iter().map(|p| p.2.len()).sum();
     ctx.set_totals(total as u64, None);
-    let opts = ImageOptions { format: o.format, quality: o.quality, keep_metadata: false, webp_mode: WebpMode::Lossy, background: "#FFFFFF".into() };
+    let opts = ImageOptions { quality: o.quality, webp_mode: WebpMode::Lossy, ..ImageOptions::convert_to(o.format) };
 
     for (file, info, list) in &plans {
         let stem = stem_of(file);
@@ -721,7 +721,7 @@ fn export_one(
         let out = fs_safe::temp_in(dir)?;
         {
             let mut w = std::io::BufWriter::new(out.as_file());
-            imgeng::encode(&img, opts, None, None, &mut w)?;
+            imgeng::encode(&img, o.format, opts, None, None, &mut w)?;
             std::io::Write::flush(&mut w).map_err(|e| Error::from(e).at(dir))?;
         }
         out

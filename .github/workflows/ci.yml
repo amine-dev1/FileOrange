@@ -1,0 +1,99 @@
+# Runs on every push and pull request. A red result means something broke: don't deploy that version.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine:
+    name: Engine and API (Rust, real PDFium and LibreOffice)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      ORANGEFILE_REQUIRE_PDFIUM: "1"
+      ORANGEFILE_REQUIRE_LIBREOFFICE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: PDFium (pinned and hash-checked)
+        run: node scripts/get-pdfium.mjs
+      - name: LibreOffice
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui fonts-dejavu-core fonts-liberation2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Tests
+        run: ORANGEFILE_PDFIUM="$PWD/src-tauri/resources/pdfium" cargo test --locked
+
+  desktop-ui:
+    name: Desktop app front end
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:unit
+
+  web:
+    name: Web app (build, unit and browser tests)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: web
+    env:
+      CHROMIUM_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run build
+      # The browser tests drive the real engine, so they need it built, with PDFium and LibreOffice.
+      - name: PDFium
+        working-directory: .
+        run: node scripts/get-pdfium.mjs
+      - name: LibreOffice and Pillow
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui fonts-dejavu-core fonts-liberation2 python3-pil
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build the engine
+        working-directory: .
+        run: cargo build --locked -p file-api
+      - name: Browser tests, local engine
+        run: ORANGEFILE_PDFIUM="$GITHUB_WORKSPACE/src-tauri/resources/pdfium" npm run test:e2e
+      - name: Browser tests, hosted server
+        run: ORANGEFILE_PDFIUM="$GITHUB_WORKSPACE/src-tauri/resources/pdfium" npm run test:e2e:hosted
+      - name: Browser tests, site and server on different origins (Netlify + Fly)
+        run: ORANGEFILE_PDFIUM="$GITHUB_WORKSPACE/src-tauri/resources/pdfium" npm run test:e2e:split
+      - name: Screenshots of failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: web/test-results
+          if-no-files-found: ignore

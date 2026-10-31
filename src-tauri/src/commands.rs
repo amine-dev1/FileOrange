@@ -98,6 +98,7 @@ fn api_operation(request: &Value) -> CmdResult<(&'static str, Value)> {
         "compress" => "compress",
         "extract" => "extract",
         "convert_image" => "convert",
+        "resize_image" => "resize",
         "pdf_merge" => "pdf_merge",
         "pdf_split" => "pdf_split",
         "pdf_pages" => "pdf_pages",

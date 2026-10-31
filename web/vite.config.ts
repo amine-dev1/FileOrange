@@ -65,6 +65,7 @@ export default defineConfig(({ mode, command }) => {
         },
       },
     },
-    build: { target: "es2021", sourcemap: false },
+    // Fonts are always separate files: the security policy (font-src 'self') refuses fonts inlined as data: addresses.
+    build: { target: "es2021", sourcemap: false, assetsInlineLimit: (file: string) => (/\.(woff2?|ttf|otf)$/i.test(file) ? false : undefined) },
   };
 });

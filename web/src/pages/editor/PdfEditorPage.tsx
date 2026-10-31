@@ -1,5 +1,6 @@
 import { CheckCircle2, Download, Eraser, FolderOpen, Loader2, RotateCcw, ScanLine, X, XCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "../../components/ToolShell";
 import { DownloadLink } from "../../components/Download";
 import { Button, Callout, Dialog, ProgressBar, cx } from "../../components/ui";
@@ -98,6 +99,22 @@ export default function PdfEditorPage() {
   const canView = can("pdf_view");
   const canAnnotate = can("pdf_annotate");
   const canSave = can("pdf_reorder") || can("pdf_rotate") || can("pdf_delete_pages") || canAnnotate;
+
+  // Arriving from "Sign a PDF": ask for the signature as soon as a PDF is open. Closing the dialog ends that request.
+  const [params, setParams] = useSearchParams();
+  const wantSign = params.get("sign") === "1";
+  const showSigning = signing || (wantSign && !!ready && canAnnotate);
+  const endSigning = () => {
+    setSigning(false);
+    if (wantSign)
+      setParams(
+        (p) => {
+          p.delete("sign");
+          return p;
+        },
+        { replace: true },
+      );
+  };
   const viewReason = caps ? (() => { const s = operationState(caps, "pdf_view"); return s.state === "ready" ? "" : s.reason; })() : "";
 
   const openFile = (f: File) => {
@@ -297,7 +314,7 @@ export default function PdfEditorPage() {
                 <div className="flex max-w-sm flex-col items-center gap-2 text-center text-slate-600 dark:text-slate-400">
                   <ScanLine className="size-8 text-slate-400" aria-hidden />
                   <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">No PDF open</h2>
-                  <p className="text-sm">{canView ? (dragging ? "Release to open this PDF." : "Choose Open PDF, or drop a PDF anywhere on this page.") : "Open a PDF to see its pages."}</p>
+                  <p className="text-sm">{canView ? (dragging ? "Release to open this PDF." : wantSign ? "Open the PDF you want to sign: choose Open PDF, or drop it anywhere on this page." : "Choose Open PDF, or drop a PDF anywhere on this page.") : "Open a PDF to see its pages."}</p>
                   {canView && (
                     <Button variant="primary" icon={<FolderOpen className="size-4" aria-hidden />} onClick={() => picker.current?.click()}>
                       Open PDF
@@ -312,13 +329,23 @@ export default function PdfEditorPage() {
       </div>
 
       {saving && <SaveDialog mode={saving} onClose={() => setSaving(null)} />}
-      {signing && (
+      {showSigning && (
         <SignatureDialog
-          onClose={() => setSigning(false)}
-          onUse={(signature) => {
-            setSigning(false);
-            A.setTool("visual-signature");
-            A.setPending({ kind: "signature", signature });
+          onClose={endSigning}
+          onUse={(result) => {
+            endSigning();
+            if (result.kind === "strokes") {
+              A.setTool("visual-signature");
+              A.setPending({ kind: "signature", signature: result.signature });
+              return;
+            }
+            A.addPicture(result.file).then(
+              (picture) => {
+                A.setTool("visual-signature");
+                A.setPending({ kind: "picture", picture });
+              },
+              (e: unknown) => setNotice(messageOf(e)),
+            );
           }}
         />
       )}

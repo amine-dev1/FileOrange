@@ -67,7 +67,7 @@ fn bundled_registry_reports_real_capabilities() {
 
     let ops: Vec<_> = caps.operations.iter().map(|o| (o.spec.id.as_str(), o.available)).collect();
     let pdf_off = |ids: &[&'static str]| ids.iter().map(|i| (*i, false)).collect::<Vec<_>>();
-    let mut want = vec![("compress", true), ("extract", true), ("convert_image", true)];
+    let mut want = vec![("compress", true), ("extract", true), ("convert_image", true), ("resize_image", true)];
     want.extend(pdf_off(&["pdf_view", "pdf_merge", "pdf_split", "images_to_pdf", "pdf_to_images", "pdf_annotate", "pdf_reorder", "pdf_rotate", "pdf_delete_pages", "pdf_extract_pages", "office_to_pdf"]));
     assert_eq!(ops, want);
 

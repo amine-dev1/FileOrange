@@ -95,13 +95,13 @@ export function AnnotationLayer({ srcPage, info, rot, interactive }: { srcPage: 
     }
     if ((tool === "image" || tool === "visual-signature") && A.pending) {
       const aspect = A.pending.kind === "picture" ? A.pending.picture.width / A.pending.picture.height : A.pending.signature.aspect;
-      const defaultW = Math.min(A.pending.kind === "signature" ? 180 : 200, W * 0.6);
+      const defaultW = Math.min(A.pending.kind === "signature" || tool === "visual-signature" ? 180 : 200, W * 0.6);
       const w = box.w >= 12 ? box.w : defaultW;
       const h = w / aspect;
       const x = Math.min(box.x, Math.max(0, W - w));
       const y = Math.min(box.y, Math.max(0, H - h));
       if (A.pending.kind === "picture") {
-        const id = A.add({ kind: "image", page: srcPage, x, y, w, h, image: A.pending.picture.id });
+        const id = A.add({ kind: "image", page: srcPage, x, y, w, h, image: A.pending.picture.id, ...(tool === "visual-signature" ? { signature: true } : {}) });
         A.select(id);
       } else {
         const { strokes } = A.pending.signature;

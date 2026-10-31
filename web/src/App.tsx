@@ -15,6 +15,7 @@ import { OfficeToPdfPage } from "./pages/OfficeToPdf";
 import { PdfHub } from "./pages/PdfHub";
 import { PdfToImagesPage } from "./pages/PdfToImages";
 import { SplitPage } from "./pages/Split";
+import { ResizePage } from "./pages/Resize";
 import { Landing } from "./pages/landing/Landing";
 
 // The editor is the largest screen and not everyone opens it, so it loads on demand.
@@ -27,6 +28,7 @@ export function App() {
       <Route element={<AppShell />}>
         <Route path="app" element={<Dashboard />} />
         <Route path="convert" element={<ConvertPage />} />
+        <Route path="resize" element={<ResizePage />} />
         <Route path="compress" element={<CompressPage />} />
         <Route path="extract" element={<ExtractPage />} />
         <Route path="pdf" element={<PdfHub />} />

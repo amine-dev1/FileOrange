@@ -14,6 +14,8 @@ export function operationLabel(j: Pick<JobRecord, "tool" | "detail">): string {
       return "Extract";
     case "convert":
       return `Convert${d}`;
+    case "resize":
+      return `Resize${d}`;
     case "pdf-merge":
       return "Merge PDFs";
     case "pdf-split":

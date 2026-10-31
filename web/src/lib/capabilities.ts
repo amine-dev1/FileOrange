@@ -82,6 +82,9 @@ export function toolsForFiles(caps: Capabilities, files: { name: string; isDir?:
   };
   const tools = [
     choice("convert_image", "Convert", (op) => (allIn(op.inputs) ? null : `Needs ${labels(caps, op.inputs)} files only.`)),
+    ...(operationState(caps, "resize_image").state !== "missing" && kinds.some((k) => k && ["jpeg", "png", "webp"].includes(k.id))
+      ? [choice("resize_image", "Resize", (op) => (allIn(op.inputs) ? null : `Needs ${labels(caps, op.inputs)} pictures only.`))]
+      : []),
     choice("compress", "Compress", () => null),
     choice("extract", "Extract", (op) => (allIn(op.inputs) ? null : `Needs ${labels(caps, op.inputs)} archives only.`)),
   ];

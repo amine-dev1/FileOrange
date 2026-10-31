@@ -47,3 +47,33 @@ test("names and sizes", () => {
   assert.equal(extensionOf(".hidden"), "");
   assert.match(formatPdfDate("D:20240102120000Z"), /2024/);
 });
+
+import { whiteToTransparent, contentBox, fitFontSize } from "../src/pages/editor/annotations/signatureImage.ts";
+
+test("signature photos: paper becomes transparent, ink stays, edges fade", () => {
+  // white, black, mid grey, light grey
+  const px = new Uint8ClampedArray([255, 255, 255, 255, 0, 0, 0, 255, 183, 183, 183, 255, 230, 230, 230, 255]);
+  const kept = whiteToTransparent(px);
+  assert.equal(px[3], 0, "white paper is gone");
+  assert.equal(px[7], 255, "black ink is kept");
+  assert.ok(px[11] > 0 && px[11] < 255, `the edge fades (${px[11]})`);
+  assert.equal(px[15], 0, "light grey paper texture is gone too");
+  assert.equal(kept, 2);
+});
+
+test("signature crop: the box around what shows, with padding, or null", () => {
+  const w = 10, h = 6;
+  const px = new Uint8ClampedArray(w * h * 4);
+  const dot = (x, y) => (px[(y * w + x) * 4 + 3] = 255);
+  dot(3, 2);
+  dot(6, 4);
+  assert.deepEqual(contentBox(px, w, h, 1), { x: 2, y: 1, w: 6, h: 5 });
+  assert.deepEqual(contentBox(px, w, h, 10), { x: 0, y: 0, w: 10, h: 6 }, "padding stops at the edges");
+  assert.equal(contentBox(new Uint8ClampedArray(w * h * 4), w, h), null);
+});
+
+test("typed signature: the font size fills the room without going past the limits", () => {
+  assert.equal(fitFontSize(200, 100, 400), 120, "short names stop at the largest size");
+  assert.equal(fitFontSize(1000, 100, 400), 40);
+  assert.equal(fitFontSize(100000, 100, 400), 18, "very long names stop at the smallest size");
+});

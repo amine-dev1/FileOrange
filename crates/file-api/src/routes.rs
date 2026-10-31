@@ -68,6 +68,7 @@ enum Op {
     Compress,
     Extract,
     Convert,
+    Resize,
     PdfMerge,
     PdfSplit,
     PdfPages,
@@ -82,6 +83,7 @@ impl Op {
             "compress" => Some(Op::Compress),
             "extract" => Some(Op::Extract),
             "convert" => Some(Op::Convert),
+            "resize" => Some(Op::Resize),
             "pdf_merge" => Some(Op::PdfMerge),
             "pdf_split" => Some(Op::PdfSplit),
             "pdf_pages" => Some(Op::PdfPages),
@@ -96,6 +98,7 @@ impl Op {
             Op::Compress => "compress",
             Op::Extract => "extract",
             Op::Convert => "convert",
+            Op::Resize => "resize",
             Op::PdfMerge => "pdf_merge",
             Op::PdfSplit => "pdf_split",
             Op::PdfPages => "pdf_pages",
@@ -109,6 +112,7 @@ impl Op {
             Op::Compress => "compress",
             Op::Extract => "extract",
             Op::Convert => "convert_image",
+            Op::Resize => "resize_image",
             Op::PdfMerge => "pdf_merge",
             Op::PdfSplit => "pdf_split",
             Op::PdfPages => "pdf_pages",
@@ -133,6 +137,7 @@ fn build_operation(st: &AppState, op: Op, options: Option<&str>) -> Result<Opera
         Operation::Extract(o) => o.max_total_bytes = Some(o.max_total_bytes.unwrap_or(u64::MAX).min(st.cfg.max_extract_bytes)),
         Operation::Compress(o) => o.include_folders = true, // folders arrive as relative paths
         Operation::ConvertImage(_)
+        | Operation::ResizeImage(_)
         | Operation::PdfMerge(_)
         | Operation::PdfSplit(_)
         | Operation::PdfPages(_)
@@ -578,10 +583,12 @@ pub async fn preview(
                     if option_problem.as_ref() != Some(&(e.code(), e.user_message())) {
                         out.errors.push(issue(e.code(), e.user_message(), Some(&f.name)));
                     }
-                } else if let (Operation::ConvertImage(o), Some(from)) = (&operation, format) {
+                } else if let (Operation::ConvertImage(o) | Operation::ResizeImage(o), Some(from)) = (&operation, format) {
                     // what the user should know about exactly this conversion
-                    let to = o.format.id().to_string();
-                    if !seen_pairs.contains(&(from.clone(), to.clone())) {
+                    let to = o.format.fixed().map(|f| f.id().to_string()).unwrap_or_else(|| from.clone());
+                    // Resizing in the same format is the point of that tool, not something to explain.
+                    let resizing_in_place = matches!(operation, Operation::ResizeImage(_)) && to == from;
+                    if !resizing_in_place && !seen_pairs.contains(&(from.clone(), to.clone())) {
                         if let Some(p) = st.registry.operation(op.core_type()).and_then(|s| s.pairs.into_iter().find(|p| p.from == from && p.to == to)) {
                             out.warnings.extend(p.notes);
                         }

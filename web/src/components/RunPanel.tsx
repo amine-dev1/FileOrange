@@ -9,6 +9,7 @@ import { Button, Callout, Card, ProgressBar, Spinner } from "./ui";
 const VERB: Record<JobRecord["tool"], string> = {
   compress: "Compressing",
   convert: "Converting",
+  resize: "Making your pictures smaller",
   extract: "Extracting",
   "pdf-merge": "Merging",
   "pdf-split": "Splitting",
@@ -36,6 +37,7 @@ export function Results({ job }: { job: JobRecord }) {
           </DownloadLink>
         )}
       </div>
+      <DoneNotes job={job} />
       {files.length > 1 && (
         <details className="rounded-xl border border-slate-200 text-sm dark:border-slate-800" open={files.length <= 8}>
           <summary className="cursor-pointer select-none px-4 py-2.5 font-medium text-slate-700 dark:text-slate-300">{plural(files.length, "file")} in this result</summary>
@@ -56,6 +58,24 @@ export function Results({ job }: { job: JobRecord }) {
         </details>
       )}
     </div>
+  );
+}
+
+/** What the engine said about files it finished, e.g. "Resized from 4000×3000 to 1920×1440 px." */
+function DoneNotes({ job }: { job: JobRecord }) {
+  const notes = job.results.filter((r) => r.outcome === "done" && r.message);
+  if (notes.length === 0) return null;
+  const shown = notes.slice(0, 20);
+  return (
+    <ul className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-300">
+      {shown.map((r, i) => (
+        <li key={i}>
+          {notes.length > 1 && <strong className="font-semibold">{r.input}: </strong>}
+          {r.message}
+        </li>
+      ))}
+      {notes.length > shown.length && <li className="text-slate-600 dark:text-slate-400">…and {notes.length - shown.length} more.</li>}
+    </ul>
   );
 }
 

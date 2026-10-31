@@ -1,7 +1,7 @@
 // Wire types of the engine API (crates/file-api/src/types.rs) plus the capability report and the annotation model
 // (crates/file-core). The browser talks to the API directly, so these are the real response shapes.
 
-export type ToolId = "compress" | "convert" | "extract" | "pdf-merge" | "pdf-split" | "pdf-pages" | "images-to-pdf" | "pdf-to-images" | "office-to-pdf";
+export type ToolId = "compress" | "convert" | "resize" | "extract" | "pdf-merge" | "pdf-split" | "pdf-pages" | "images-to-pdf" | "pdf-to-images" | "office-to-pdf";
 
 export type WireStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
 export type WireOutcome = "done" | "skipped" | "failed";

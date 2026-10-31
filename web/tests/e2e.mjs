@@ -148,13 +148,7 @@ section("Landing page");
   await page.getByRole("link", { name: "OrangeFile home" }).click();
   await page.getByRole("heading", { level: 1, name: /Turn the file/ }).waitFor();
   ok(true, "the logo in the app leads back to the landing page");
-  const donate = page.locator("#support").getByRole("link", { name: /Donate with PayPal/ });
-  const href = await donate.getAttribute("href");
-  ok(href?.startsWith("https://www.paypal.com/donate/") && href.includes("business=elidrissiamine74%40gmail.com"), `the donate button goes to PayPal: ${href}`);
-  eq(await donate.getAttribute("target"), "_blank", "and opens in a new tab");
-  await page.goto(BASE + "/app");
-  ok((await page.getByRole("link", { name: /Donate with PayPal/ }).getAttribute("href")) === href, "the dashboard has the same donate link");
-  await page.goto(BASE + "/");
+  eq(await page.getByRole("link", { name: /Donate/ }).count(), 0, "no donate button while no donation link is configured");
   await page.getByText("Is it really free?").click();
   await page.getByText(/no paid plan and no account/).waitFor();
   ok(true, "questions open");
@@ -182,9 +176,9 @@ section("Dashboard follows what the engine reports");
   await page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ }).waitFor();
   const caps = await (await eng("/capabilities")).json();
   const cards = await page.locator("#tools-heading + div a, #tools-heading + div [aria-disabled]").count();
-  eq(cards, 9, "one card per tool");
+  eq(cards, 11, "one card per tool");
   const open_ = await page.locator("#tools-heading + div a").count();
-  eq(open_, caps.operations.filter((o) => ["convert_image", "compress", "extract", "pdf_view", "pdf_merge", "pdf_split", "images_to_pdf", "pdf_to_images", "office_to_pdf"].includes(o.id) && o.available).length, "cards that can be opened = available operations");
+  eq(open_, caps.operations.filter((o) => ["convert_image", "resize_image", "compress", "extract", "pdf_view", "pdf_annotate", "pdf_merge", "pdf_split", "images_to_pdf", "pdf_to_images", "office_to_pdf"].includes(o.id) && o.available).length, "cards that can be opened = available operations");
   // Selecting files offers exactly the tools that fit them.
   await input(page).setInputFiles([red]);
   await page.getByRole("heading", { name: "Selected files" }).waitFor();
@@ -243,6 +237,47 @@ section("Convert images");
 
 // ================================================================== compress + extract
 let zipFile;
+section("Resize and compress images");
+{
+  const a = await open("/resize");
+  const { page } = a;
+  // by percentage, same format: a PNG stays a PNG at half the size
+  await input(page).setInputFiles([red]);
+  await page.getByRole("button", { name: "50%" }).click();
+  await page.getByRole("button", { name: "Make smaller", exact: true }).click();
+  await done(page);
+  const half = await download(page);
+  eq(half.bytes.subarray(0, 4).toString("hex"), "89504e47", "a PNG stays a PNG");
+  eq(py("import sys\nfrom PIL import Image\nprint(Image.open(sys.argv[1]).size)", half.file).trim(), "(100, 50)", "at half its size");
+  await page.getByText(/Resized from 200×100 to 100×50 px/).waitFor();
+  ok(true, "the result says what changed");
+
+  // aim for a file size: a noisy picture, saved as JPG under 40 KB
+  await page.getByRole("button", { name: "Start another" }).click();
+  const noisy = join(work, "noisy.png");
+  py("import sys,os\nfrom PIL import Image\nImage.frombytes('RGB',(480,480),os.urandom(480*480*3)).save(sys.argv[1])", noisy);
+  await input(page).setInputFiles([noisy]);
+  await radio(page, "Keep the size").click();
+  await radio(page, "JPG").click();
+  await page.getByRole("switch", { name: "Aim for a file size" }).click();
+  await page.locator("#rs-kb").fill("40");
+  await page.getByRole("button", { name: "Make smaller", exact: true }).click();
+  await done(page);
+  const small = await download(page);
+  eq(small.bytes.subarray(0, 3).toString("hex"), "ffd8ff", "saved as JPG");
+  ok(small.bytes.length <= 40_000, `under 40 KB (${small.bytes.length} bytes)`);
+  await page.getByText(/keeps it under 40 KB/).waitFor();
+  ok(true, "the result names the quality used");
+
+  // nothing to do is not offered
+  await page.getByRole("button", { name: "Start another" }).click();
+  await input(page).setInputFiles([red]);
+  await radio(page, "Keep the size").click();
+  ok(await page.getByRole("button", { name: "Make smaller", exact: true }).isDisabled(), "keeping size, format and quality can't be run");
+  eq(errorsOf(a), [], "no console errors");
+  await a.close();
+}
+
 section("Compress a folder, then extract it");
 {
   const tree = join(work, "photos");
@@ -557,6 +592,83 @@ if (hasPdfium) {
   }
 }
 
+if (hasPdfium) {
+  section("Sign a PDF: typed and photo signatures, transparent on the page, remembered on request");
+  {
+    const a = await open("/pdf/editor?sign=1");
+    const { page } = a;
+    await page.getByText("Open the PDF you want to sign").waitFor();
+    await input(page, "Choose a PDF to open").setInputFiles([pdfFix("three-pages.pdf")]);
+    await page.getByRole("heading", { name: "Add your signature" }).waitFor();
+    ok(true, "the signature dialog opens by itself once the PDF is open");
+    await radio(page, "Type").click();
+    await page.getByLabel("Your name").fill("Amine Test");
+    await page.getByRole("switch", { name: "Remember it on this device" }).click();
+    await page.getByRole("button", { name: "Use this signature" }).click();
+    // place it on page 3, which is blue all over: the paper around the letters must stay blue
+    await page.locator('[data-position="3"]').click();
+    await page.waitForTimeout(300);
+    const svg = page.locator('[data-testid="annotation-layer"]');
+    const b = await svg.boundingBox();
+    await page.mouse.move(b.x + b.width * 0.2, b.y + b.height * 0.4);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width * 0.8, b.y + b.height * 0.6, { steps: 6 });
+    await page.mouse.up();
+    eq(await page.evaluate(() => document.querySelectorAll('[data-testid="annotation-layer"] [data-kind="image"]').length), 1, "the typed signature is on the page");
+    ok(!!(await page.evaluate(() => localStorage.getItem("orangefile.signature.v1"))), "and remembered in this browser, as asked");
+
+    await page.getByRole("button", { name: "Save copy" }).click();
+    await page.waitForFunction(() => { const x = [...document.querySelectorAll('[role="dialog"] button')].find((y) => y.textContent === "Save"); return !!x && !x.disabled; }, null, { timeout: 15_000 });
+    await page.getByRole("dialog").getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByText(/^Saved “/).waitFor({ timeout: 60_000 });
+    const out = await download(page);
+    // sample a band across the signature box: some pixels are ink (dark), the rest is still the page's blue, none is white
+    const spots = Array.from({ length: 40 }, (_, i) => [0.22 + i * 0.014, 0.5]);
+    const px = await pixels(out.bytes, 3, spots);
+    const ink = px.filter(([r, g, bl]) => r < 90 && g < 90 && bl < 160).length;
+    const white = px.filter(([r, g, bl]) => r > 220 && g > 220 && bl > 220).length;
+    ok(ink > 0, `the signature's ink is in the saved PDF (${ink} dark samples)`);
+    eq(white, 0, "no white box around it: the background is transparent");
+    eq(errorsOf(a), [], "no console errors");
+    await a.close();
+  }
+  {
+    // next time: the remembered signature is offered; a photo with white paper loses its background
+    const a = await open("/app");
+    const { page } = a;
+    await page.getByRole("link", { name: /Sign a PDF/ }).first().click();
+    await input(page, "Choose a PDF to open").setInputFiles([pdfFix("three-pages.pdf")]);
+    await page.getByRole("heading", { name: "Add your signature" }).waitFor();
+    // a fresh browser context has no memory of the previous one
+    eq(await page.getByRole("button", { name: "Use my saved signature" }).count(), 0, "nothing is remembered in a different browser");
+    await radio(page, "Photo").click();
+    const scan = join(work, "scan.png");
+    py("import sys\nfrom PIL import Image, ImageDraw\nim=Image.new('RGB',(400,160),(250,250,246))\nd=ImageDraw.Draw(im)\nd.line([(30,120),(120,40),(200,120),(330,50)],fill=(20,20,60),width=8)\nim.save(sys.argv[1])", scan);
+    await page.getByLabel("Choose a photo of your signature").setInputFiles([scan]);
+    await page.waitForTimeout(400);
+    const corner = await page.getByTestId("signature-photo").evaluate((c) => [...c.getContext("2d").getImageData(2, 2, 1, 1).data]);
+    eq(corner[3], 0, "the paper is transparent in the preview");
+    await page.getByRole("button", { name: "Use this signature" }).click();
+    const svg = page.locator('[data-testid="annotation-layer"]');
+    const b = await svg.boundingBox();
+    await page.mouse.click(b.x + b.width * 0.5, b.y + b.height * 0.8);
+    eq(await page.evaluate(() => document.querySelectorAll('[data-testid="annotation-layer"] [data-kind="image"]').length), 1, "the photo signature is placed");
+    await page.getByRole("button", { name: "Visual signature", exact: true }).click();
+    await page.getByRole("heading", { name: "Add your signature" }).waitFor();
+    await radio(page, "Photo").click();
+    const blank = join(work, "blank.png");
+    py("import sys\nfrom PIL import Image\nImage.new('RGB',(200,100),(255,255,255)).save(sys.argv[1])", blank);
+    await page.getByLabel("Choose a photo of your signature").setInputFiles([blank]);
+    await page.waitForTimeout(300);
+    await page.getByRole("button", { name: "Use this signature" }).click();
+    await page.getByRole("alert").filter({ hasText: "No signature was found" }).waitFor();
+    ok(true, "a blank photo is explained, not placed");
+    await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+    eq(errorsOf(a), [], "no console errors");
+    await a.close();
+  }
+}
+
 // ================================================================== jobs list, theme, layout, accessibility
 if (HOSTED) {
   section("Hosted: sessions, limits, the usage meter, signed downloads");
@@ -655,7 +767,7 @@ section("Recent jobs, theme and phone layout");
   await m.page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Compress" }).click();
   await m.page.getByRole("heading", { name: "Compress to ZIP" }).waitFor();
   ok(await m.page.getByRole("button", { name: "Open menu" }).isVisible(), "the menu closes after choosing a page");
-  for (const p of ["/convert", "/pdf", "/pdf/editor", "/jobs", "/about"]) {
+  for (const p of ["/convert", "/resize", "/pdf", "/pdf/editor", "/jobs", "/about"]) {
     await m.page.goto(BASE + p);
     await m.page.waitForSelector("main");
     ok(await m.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `no sideways scrolling on ${p}`);
@@ -683,7 +795,7 @@ for (const dark of [false, true]) {
   await input(page).setInputFiles([red, pdfFix("three-pages.pdf")]);
   await page.getByRole("heading", { name: "Selected files" }).waitFor();
   await check("dashboard with files");
-  for (const [p, n] of [["/convert", "convert"], ["/compress", "compress"], ["/extract", "extract"], ["/pdf", "PDF hub"], ["/pdf/merge", "merge"], ["/pdf/split", "split"], ["/pdf/images-to-pdf", "images to PDF"], ["/pdf/to-images", "PDF to images"], ["/pdf/documents-to-pdf", "documents to PDF"], ["/jobs", "jobs"], ["/about", "about"]]) {
+  for (const [p, n] of [["/convert", "convert"], ["/resize", "resize"], ["/compress", "compress"], ["/extract", "extract"], ["/pdf", "PDF hub"], ["/pdf/merge", "merge"], ["/pdf/split", "split"], ["/pdf/images-to-pdf", "images to PDF"], ["/pdf/to-images", "PDF to images"], ["/pdf/documents-to-pdf", "documents to PDF"], ["/jobs", "jobs"], ["/about", "about"]]) {
     await go(p);
     await page.waitForTimeout(200);
     await check(n);

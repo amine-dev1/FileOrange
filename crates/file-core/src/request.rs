@@ -61,6 +61,8 @@ pub enum Operation {
     Compress(CompressOptions),
     Extract(ExtractOptions),
     ConvertImage(ImageOptions),
+    /// The same image pipeline, used to make pictures smaller: resize, aim for a file size, usually keeping the format.
+    ResizeImage(ImageOptions),
     PdfMerge(PdfMergeOptions),
     PdfSplit(PdfSplitOptions),
     /// Reorder, rotate, delete or extract pages: the result is exactly the pages listed.
@@ -79,6 +81,7 @@ impl Operation {
             Operation::Compress(_) => "compress",
             Operation::Extract(_) => "extract",
             Operation::ConvertImage(_) => "convert_image",
+            Operation::ResizeImage(_) => "resize_image",
             Operation::PdfMerge(_) => "pdf_merge",
             Operation::PdfSplit(_) => "pdf_split",
             Operation::PdfPages(_) => "pdf_pages",

@@ -1,0 +1,55 @@
+# Deploys the server to Fly.io when engine or server code changes on main, after its tests pass.
+# Off until you add a FLY_API_TOKEN secret to the GitHub repository (see DEPLOY.md, "Deploying from GitHub").
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "Dockerfile"
+      - "fly.toml"
+      - "scripts/get-pdfium.mjs"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-fly
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Engine and API tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      ORANGEFILE_REQUIRE_PDFIUM: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/get-pdfium.mjs
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: ORANGEFILE_PDFIUM="$PWD/src-tauri/resources/pdfium" cargo test --locked
+
+  deploy:
+    name: fly deploy
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - name: Skip when no Fly token is configured
+        if: env.FLY_API_TOKEN == ''
+        run: echo "::notice::FLY_API_TOKEN is not set, so nothing was deployed. See DEPLOY.md."
+      - uses: actions/checkout@v4
+        if: env.FLY_API_TOKEN != ''
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: env.FLY_API_TOKEN != ''
+      - name: Deploy
+        if: env.FLY_API_TOKEN != ''
+        run: flyctl deploy --remote-only --ha=false

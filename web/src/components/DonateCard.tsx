@@ -3,6 +3,7 @@ import { DONATE_URL } from "../lib/donate";
 
 /** A quiet ask at the bottom of the dashboard. Opens PayPal in a new tab, so nothing in progress is lost. */
 export function DonateCard() {
+  if (!DONATE_URL) return null;
   return (
     <section aria-labelledby="donate-heading" className="flex flex-col gap-4 rounded-2xl border border-brand-200 bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-brand-900 dark:bg-brand-900/20">
       <div className="flex items-start gap-3">

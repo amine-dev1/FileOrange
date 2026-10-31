@@ -13,9 +13,10 @@ import { Badge, Button, ProgressBar, cx } from "./ui";
 const NAV = [
   { to: "/app", label: "Dashboard", Icon: House, end: true },
   { to: "/convert", label: "Convert", Icon: TOOLS[0].Icon },
+  { to: "/resize", label: "Resize images", Icon: TOOLS[1].Icon },
   { to: "/pdf", label: "PDF tools", Icon: FileText },
-  { to: "/compress", label: "Compress", Icon: TOOLS[1].Icon },
-  { to: "/extract", label: "Extract", Icon: TOOLS[2].Icon },
+  { to: "/compress", label: "Compress", Icon: TOOLS[2].Icon },
+  { to: "/extract", label: "Extract", Icon: TOOLS[3].Icon },
   { to: "/jobs", label: "Recent jobs", Icon: Clock },
   { to: "/about", label: "About", Icon: Info },
 ];
@@ -51,7 +52,8 @@ function ThemeSwitch() {
 function UsageMeter() {
   const { jobs } = useJobs();
   const [me, setMe] = useState<MeResponse | null>(null);
-  const finished = jobs.filter((j) => !isActive(j)).length;
+  // Ask again when a job starts (its upload counts straight away) and when one finishes.
+  const finished = `${jobs.length}:${jobs.filter((j) => !isActive(j)).length}`;
   useEffect(() => {
     let stale = false;
     api

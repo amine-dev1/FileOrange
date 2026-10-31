@@ -68,6 +68,12 @@ const GROUPS: {
         to: "/convert",
       },
       {
+        name: "Resize and compress",
+        what: "Smaller dimensions, or a file size you choose.",
+        flow: "4 MB → 300 KB",
+        to: "/resize",
+      },
+      {
         name: "Pictures to PDF",
         what: "One page per picture, in the order you choose.",
         flow: ".jpg ×4 → .pdf",
@@ -85,6 +91,12 @@ const GROUPS: {
         what: "Reorder, rotate, delete pages; draw, highlight, add text.",
         flow: ".pdf → .pdf",
         to: "/pdf/editor",
+      },
+      {
+        name: "Sign a PDF",
+        what: "Draw, type or upload your signature, then place it.",
+        flow: ".pdf → signed .pdf",
+        to: "/pdf/editor?sign=1",
       },
       {
         name: "Merge PDFs",
@@ -272,12 +284,21 @@ export function Landing() {
                 .jpg .png .webp .pdf .docx .xlsx .pptx .zip
               </p>
               <h1 className="mt-5 font-display text-[clamp(2.6rem,6.2vw,5.25rem)] leading-[0.95] font-extrabold tracking-[-0.035em] text-aubergine">
-                {["Turn the file", "you have into", "the one"].map((line, n) => (
-                  <span key={line} className="lp-rise block" style={{ animationDelay: `${90 + n * 90}ms` }}>
-                    {line}
-                  </span>
-                ))}
-                <span className="lp-rise block" style={{ animationDelay: "360ms" }}>
+                {["Turn the file", "you have into", "the one"].map(
+                  (line, n) => (
+                    <span
+                      key={line}
+                      className="lp-rise block"
+                      style={{ animationDelay: `${90 + n * 90}ms` }}
+                    >
+                      {line}
+                    </span>
+                  ),
+                )}
+                <span
+                  className="lp-rise block"
+                  style={{ animationDelay: "360ms" }}
+                >
                   <span className="lp-marker">you need.</span>
                 </span>
               </h1>
@@ -570,31 +591,48 @@ export function Landing() {
             </Link>
           </div>
         </Section>
-        {/* ------------------------------------------------------------------ support */}
-        <Section id="support" className="pb-24">
-          <div data-reveal className="grid items-center gap-8 rounded-[2rem] border-2 border-aubergine bg-mint p-8 text-aubergine sm:p-12 md:grid-cols-[1.4fr_1fr]">
-            <div>
-              <p className="font-mono text-xs font-bold tracking-[0.18em] uppercase">Support</p>
-              <h2 className="mt-3 font-display text-4xl leading-[1.02] font-bold tracking-tight sm:text-5xl">Free, no ads. Kept going by people like you.</h2>
-              <p className="mt-4 max-w-xl text-lg">
-                OrangeFile is made by one developer. If it saved you time, a donation helps pay for the server and for the next tools.
-              </p>
-            </div>
-            <div className="flex flex-col items-start gap-3 md:items-end">
-              <a
-                href={DONATE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group inline-flex items-center gap-2.5 rounded-full bg-aubergine px-8 py-4 text-base font-semibold text-peel shadow-[4px_4px_0_0_var(--color-peel)] transition-transform hover:-translate-y-0.5"
+        {DONATE_URL && (
+          <>
+            {/* ------------------------------------------------------------------ support */}
+            <Section id="support" className="pb-24">
+              <div
+                data-reveal
+                className="grid items-center gap-8 rounded-[2rem] border-2 border-aubergine bg-mint p-8 text-aubergine sm:p-12 md:grid-cols-[1.4fr_1fr]"
               >
-                <Heart className="size-5 transition-transform group-hover:scale-110" aria-hidden />
-                Donate with PayPal
-                <span className="sr-only">(opens in a new tab)</span>
-              </a>
-              <p className="font-mono text-xs font-semibold">Any amount · card or PayPal account</p>
-            </div>
-          </div>
-        </Section>
+                <div>
+                  <p className="font-mono text-xs font-bold tracking-[0.18em] uppercase">
+                    Support
+                  </p>
+                  <h2 className="mt-3 font-display text-4xl leading-[1.02] font-bold tracking-tight sm:text-5xl">
+                    Free, no ads. Kept going by people like you.
+                  </h2>
+                  <p className="mt-4 max-w-xl text-lg">
+                    OrangeFile is made by one developer. If it saved you time, a
+                    donation helps pay for the server and for the next tools.
+                  </p>
+                </div>
+                <div className="flex flex-col items-start gap-3 md:items-end">
+                  <a
+                    href={DONATE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-2.5 rounded-full bg-aubergine px-8 py-4 text-base font-semibold text-peel shadow-[4px_4px_0_0_var(--color-peel)] transition-transform hover:-translate-y-0.5"
+                  >
+                    <Heart
+                      className="size-5 transition-transform group-hover:scale-110"
+                      aria-hidden
+                    />
+                    Donate with PayPal
+                    <span className="sr-only">(opens in a new tab)</span>
+                  </a>
+                  <p className="font-mono text-xs font-semibold">
+                    Any amount · card or PayPal account
+                  </p>
+                </div>
+              </div>
+            </Section>
+          </>
+        )}
       </main>
 
       <footer className="border-t-2 border-aubergine/10 px-4 py-10 sm:px-6 dark:border-peel/10">
@@ -625,9 +663,16 @@ export function Landing() {
             <a href="#privacy" className="hover:underline">
               Privacy
             </a>
-            <a href={DONATE_URL} target="_blank" rel="noopener noreferrer" className="hover:underline">
-              Donate<span className="sr-only"> (opens in a new tab)</span>
-            </a>
+            {DONATE_URL && (
+              <a
+                href={DONATE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                Donate<span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            )}
             <Link to="/about" className="hover:underline">
               About and licences
             </Link>

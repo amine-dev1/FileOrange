@@ -72,6 +72,17 @@ The Fly server also serves the web app itself, so `https://<name>.fly.dev` works
 The build writes Netlify's `_headers` (security policy that only allows calls to your Fly address) and `_redirects` (so links like `/convert` work).
 Tested with `npm run test:e2e:split` (site and engine on different origins, real browser): sessions, uploads, signed downloads, PDF page pictures.
 
+## Deploying from GitHub (optional)
+
+`.github/workflows/deploy-fly.yml` runs `fly deploy` by itself when server code changes on `main`, after the engine tests pass.
+It does nothing until you give GitHub a Fly token:
+
+1. In PowerShell: `fly tokens create deploy -a <name>` and copy the whole output (it starts with `FlyV1`).
+2. On GitHub: your repository → **Settings → Secrets and variables → Actions → New repository secret**.
+   Name: `FLY_API_TOKEN`, value: the token. Save.
+
+Changes to the web app alone don't redeploy Fly (Netlify handles those). To deploy by hand from GitHub: **Actions → Deploy to Fly.io → Run workflow**.
+
 ## Checking it works
 
 * `https://<name>.fly.dev/health` shows `{"status":"ok",…}`.
