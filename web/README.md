@@ -41,6 +41,14 @@ The app calls same-origin `/api/v1/...` and holds **no secret in its code**. Two
 
 `npm run test:e2e:hosted` runs the whole browser suite against a hosted server (1 MB file limit so that "too big" is easy to test).
 
+## Languages (English, French)
+
+Visible text goes through `t()` from `src/lib/i18n.ts`, with the English text as the key: `t("Convert images")`, or with values,
+`t("Up to {size} per file.", { size })`. French lives in `src/lib/fr.ts`; anything missing there simply stays English. Text from the
+server (option labels, notes, errors) goes through `t()` too, and messages with numbers or names in them are matched by `FR_PATTERNS`.
+Shared components (`Card`, `Field`, `Segmented`, `Switch`, `Dialog`, `Callout`, page headers) translate their own labels.
+The first visit follows the browser's language; the EN/FR switch is remembered in the browser.
+
 ## Layout
 
 ```

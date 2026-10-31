@@ -5,6 +5,7 @@ import { toItem, type FileItem } from "../lib/files";
 import { useCapabilities } from "../state/CapabilitiesProvider";
 import { useDragging } from "../state/DropProvider";
 import { Button, cx } from "./ui";
+import { t } from "../lib/i18n";
 
 interface Props {
   onFiles: (items: FileItem[]) => void;
@@ -39,9 +40,9 @@ export function DropZone({ onFiles, accept, multiple = true, folders = false, hi
         <UploadCloud className="size-6" aria-hidden />
       </span>
       <div>
-        <p className="font-semibold text-slate-900 dark:text-slate-100">{dragging ? "Release to add" : "Drop files here"}</p>
-        <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{hint ?? "or choose them from your computer. Nothing is uploaded until you start."}</p>
-        {max !== null && max < 1_000_000_000 && <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">Up to {formatLimit(max)} per file.</p>}
+        <p className="font-semibold text-slate-900 dark:text-slate-100">{t(dragging ? "Release to add" : "Drop files here")}</p>
+        <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{t(hint ?? "or choose them from your computer. Nothing is uploaded until you start.")}</p>
+        {max !== null && max < 1_000_000_000 && <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">{t("Up to {size} per file.", { size: formatLimit(max) })}</p>}
       </div>
       <div className="flex flex-wrap justify-center gap-2">
         <Button variant="primary" onClick={() => files.current?.click()}>
@@ -49,7 +50,7 @@ export function DropZone({ onFiles, accept, multiple = true, folders = false, hi
         </Button>
         {folders && (
           <Button icon={<FolderUp className="size-4" aria-hidden />} onClick={() => dir.current?.click()}>
-            Choose a folder
+            {t("Choose a folder")}
           </Button>
         )}
       </div>
@@ -72,7 +73,7 @@ export function DropZone({ onFiles, accept, multiple = true, folders = false, hi
           type="file"
           className="sr-only"
           tabIndex={-1}
-          aria-label="Choose a folder"
+          aria-label={t("Choose a folder")}
           // Not in React's types, but supported by every current browser.
           {...({ webkitdirectory: "", directory: "" } as Record<string, string>)}
           onChange={(e) => {

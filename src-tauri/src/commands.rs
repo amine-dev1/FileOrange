@@ -105,6 +105,9 @@ fn api_operation(request: &Value) -> CmdResult<(&'static str, Value)> {
         "images_to_pdf" => "images_to_pdf",
         "pdf_to_images" => "pdf_to_images",
         "office_to_pdf" => "office_to_pdf",
+        "pdf_protect" => "pdf_protect",
+        "pdf_unlock" => "pdf_unlock",
+        "pdf_compress" => "pdf_compress",
         _ => return Err(ClientError::new("INVALID_REQUEST", "Unknown operation.")),
     };
     Ok((op, opts))

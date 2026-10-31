@@ -86,6 +86,21 @@ pub struct ApiConfig {
     pub document_idle: Duration,
     /// Browser origins allowed to call the API. Empty = no browser may.
     pub allowed_origins: Vec<String>,
+    /// Hosted only: ask new visitors to pass a CAPTCHA (Cloudflare Turnstile) before they get a session.
+    pub captcha: Option<Captcha>,
+}
+
+/// Cloudflare Turnstile. The site key is public (the browser needs it); the secret stays on the server.
+#[derive(Clone)]
+pub struct Captcha {
+    pub site_key: String,
+    pub secret: String,
+    /// Where answers are checked; Cloudflare's address unless a test points it elsewhere.
+    pub verify_url: String,
+}
+
+impl Captcha {
+    pub const CLOUDFLARE: &'static str = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 }
 
 const GIB: u64 = 1024 * 1024 * 1024;
@@ -114,6 +129,7 @@ impl ApiConfig {
             max_open_documents: 8,
             document_idle: Duration::from_secs(30 * 60),
             allowed_origins: vec![],
+            captcha: None,
         }
     }
 

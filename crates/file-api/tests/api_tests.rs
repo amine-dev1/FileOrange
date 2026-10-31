@@ -558,7 +558,7 @@ async fn capabilities_report_real_engines_formats_and_server_limits() {
     let caps: file_core::Capabilities = serde_json::from_str(&text).unwrap();
 
     let ids: Vec<_> = caps.engines.iter().map(|x| x.info.id.as_str()).collect();
-    assert_eq!(ids, ["zip", "image", "pdf", "office"]);
+    assert_eq!(ids, ["zip", "image", "pdf", "office", "qpdf", "pdfsize"]);
     let convert = caps.operations.iter().find(|o| o.spec.id == "convert_image").unwrap();
     assert!(convert.available && convert.spec.pairs.len() == 9);
     for opt in ["webp_mode", "quality", "background", "keep_metadata"] {

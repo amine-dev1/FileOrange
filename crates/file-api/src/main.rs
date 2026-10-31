@@ -15,6 +15,7 @@
 //!   FILE_API_ALLOWED_ORIGINS  comma-separated origins of other sites allowed to call the API (usually none)
 //!   FILE_API_CLIENT_IP_HEADER the header the platform's proxy puts the visitor's address in (fly-client-ip)
 //!   FILE_API_MAX_FILE_MB      largest file, default 100
+//!   FILE_API_TURNSTILE_SITE_KEY + FILE_API_TURNSTILE_SECRET   Cloudflare Turnstile keys: new visitors pass a CAPTCHA (optional)
 
 use file_api::{start, ApiConfig};
 
@@ -51,6 +52,12 @@ async fn serve() -> std::io::Result<()> {
         c.allowed_origins = list("FILE_API_ALLOWED_ORIGINS");
         c.static_dir = std::env::var_os("FILE_API_STATIC_DIR").map(Into::into);
         c.client_ip_header = std::env::var("FILE_API_CLIENT_IP_HEADER").ok().filter(|s| !s.is_empty());
+        let env = |k: &str| std::env::var(k).ok().map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+        c.captcha = match (env("FILE_API_TURNSTILE_SITE_KEY"), env("FILE_API_TURNSTILE_SECRET")) {
+            (Some(site_key), Some(secret)) => Some(file_api::Captcha { site_key, secret, verify_url: env("FILE_API_TURNSTILE_VERIFY_URL").unwrap_or_else(|| file_api::Captcha::CLOUDFLARE.into()) }),
+            (None, None) => None,
+            _ => return Err(invalid("Set both FILE_API_TURNSTILE_SITE_KEY and FILE_API_TURNSTILE_SECRET to turn the CAPTCHA on, or neither.".into())),
+        };
         c
     } else {
         ApiConfig::local(data_dir)

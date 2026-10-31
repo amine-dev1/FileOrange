@@ -6,6 +6,8 @@ use crate::formats::{self, FileDescriptor};
 use crate::fs_safe::{self, ConflictPolicy};
 use crate::engine::image::ImageOptions;
 use crate::engine::office::OfficeToPdfOptions;
+use crate::engine::pdfsize::PdfCompressOptions;
+use crate::engine::qpdf::{PdfProtectOptions, PdfUnlockOptions};
 use crate::engine::pdf::{ImagesToPdfOptions, PdfMergeOptions, PdfPagesOptions, PdfSplitOptions, PdfToImagesOptions};
 use crate::job::JobContext;
 use serde::{Deserialize, Serialize};
@@ -73,6 +75,12 @@ pub enum Operation {
     PdfToImages(PdfToImagesOptions),
     /// Word, Excel, PowerPoint and OpenDocument files to PDF, by LibreOffice.
     OfficeToPdf(OfficeToPdfOptions),
+    /// Add a password (qpdf).
+    PdfProtect(PdfProtectOptions),
+    /// Remove a known password (qpdf).
+    PdfUnlock(PdfUnlockOptions),
+    /// Make a PDF smaller: pictures inside it resized and recompressed, then the file tidied.
+    PdfCompress(PdfCompressOptions),
 }
 
 impl Operation {
@@ -88,6 +96,9 @@ impl Operation {
             Operation::ImagesToPdf(_) => "images_to_pdf",
             Operation::PdfToImages(_) => "pdf_to_images",
             Operation::OfficeToPdf(_) => "office_to_pdf",
+            Operation::PdfProtect(_) => "pdf_protect",
+            Operation::PdfUnlock(_) => "pdf_unlock",
+            Operation::PdfCompress(_) => "pdf_compress",
         }
     }
 }

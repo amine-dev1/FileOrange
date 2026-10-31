@@ -22,6 +22,7 @@ import { turned } from "./plan";
 import { SaveDialog, type SaveMode } from "./SaveDialog";
 import { ToolsPanel, type ToolAction } from "./ToolsPanel";
 import { displayWidth, percentOf } from "./zoom";
+import { t } from "../../lib/i18n";
 
 const FIRST = "Open a PDF first.";
 
@@ -39,39 +40,39 @@ function SaveStatus() {
       <div className="min-w-0 flex-1">
         {active && (
           <>
-            <strong className="font-semibold">{job.phase === "uploading" ? "Sending" : "Saving"} “{job.title}”…</strong> {job.percent}%
+            <strong className="font-semibold">{t(job.phase === "uploading" ? "Sending “{name}”…" : "Saving “{name}”…", { name: job.title })}</strong> {job.percent}%
             <div className="mt-1.5 max-w-xs">
-              <ProgressBar percent={job.percent} label="Saving progress" />
+              <ProgressBar percent={job.percent} label={t("Saving progress")} />
             </div>
           </>
         )}
         {job.phase === "completed" && (
           <>
-            <strong className="font-semibold">Saved “{job.title}”</strong>
-            {job.detail ? ` · ${job.detail}` : ""}
+            <strong className="font-semibold">{t("Saved “{name}”", { name: job.title })}</strong>
+            {job.detail ? ` · ${t(job.detail)}` : ""}
           </>
         )}
         {job.phase === "failed" && (
           <>
-            <strong className="font-semibold">The copy wasn't saved.</strong> {job.error?.message ?? job.results.find((r) => r.outcome === "failed")?.message ?? "Something went wrong."} Your original was not changed.
+            <strong className="font-semibold">{t("The copy wasn't saved.")}</strong> {t(job.error?.message ?? job.results.find((r) => r.outcome === "failed")?.message ?? "Something went wrong.")} {t("Your original was not changed.")}
           </>
         )}
-        {job.phase === "cancelled" && <strong className="font-semibold">Saving was cancelled. Your original was not changed.</strong>}
-        {job.phase === "expired" && <strong className="font-semibold">That copy has been deleted from the server.</strong>}
+        {job.phase === "cancelled" && <strong className="font-semibold">{t("Saving was cancelled. Your original was not changed.")}</strong>}
+        {job.phase === "expired" && <strong className="font-semibold">{t("That copy has been deleted from the server.")}</strong>}
       </div>
       {active && (
         <Button size="sm" variant="danger" onClick={() => cancel(job.id)}>
-          Cancel
+          {t("Cancel")}
         </Button>
       )}
       {job.phase === "completed" && job.serverId && file && (
         <DownloadLink primary job={job.serverId} index={file.index} className="h-9">
-          <Download className="size-4" aria-hidden /> Download
+          <Download className="size-4" aria-hidden /> {t("Download")}
         </DownloadLink>
       )}
       {!active && (
         <Button size="sm" variant="ghost" onClick={() => dismissCurrent("pdf-pages")}>
-          Dismiss
+          {t("Dismiss")}
         </Button>
       )}
     </div>
@@ -177,8 +178,8 @@ export default function PdfEditorPage() {
   useEffect(() => {
     if (!canAnnotate) return;
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (!(e.ctrlKey || e.metaKey) || t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || document.querySelector('[role="dialog"]')) return;
+      const el = e.target as HTMLElement | null;
+      if (!(e.ctrlKey || e.metaKey) || el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || document.querySelector('[role="dialog"]')) return;
       const k = e.key.toLowerCase();
       if (k === "z" && !e.shiftKey) undo();
       else if (k === "y" || (k === "z" && e.shiftKey)) redo();
@@ -192,20 +193,20 @@ export default function PdfEditorPage() {
   return (
     <>
       <PageHeader
-        title="PDF editor"
-        subtitle={ready ? ready.doc.name : "View pages, reorder, rotate, delete and extract them, and annotate. Your original is never changed."}
+        title={t("PDF editor")}
+        subtitle={ready ? ready.doc.name : t("View pages, reorder, rotate, delete and extract them, and annotate. Your original is never changed.")}
         actions={
           <>
-            <Button icon={<FolderOpen className="size-4" aria-hidden />} disabled={!canView} title={canView ? undefined : viewReason} onClick={() => picker.current?.click()}>
-              Open PDF
+            <Button icon={<FolderOpen className="size-4" aria-hidden />} disabled={!canView} title={canView ? undefined : t(viewReason)} onClick={() => picker.current?.click()}>
+              {t("Open PDF")}
             </Button>
             {ready && (
               <Button icon={<X className="size-4" aria-hidden />} onClick={close}>
-                Close PDF
+                {t("Close PDF")}
               </Button>
             )}
-            <Button variant="primary" disabled={!ready || !dirty || !canSave} title={!ready ? FIRST : !dirty ? "Change the pages or add an annotation first." : "Save the changes as a new PDF"} onClick={() => setSaving("copy")}>
-              Save copy
+            <Button variant="primary" disabled={!ready || !dirty || !canSave} title={t(!ready ? FIRST : !dirty ? "Change the pages or add an annotation first." : "Save the changes as a new PDF")} onClick={() => setSaving("copy")}>
+              {t("Save copy")}
             </Button>
           </>
         }
@@ -216,7 +217,7 @@ export default function PdfEditorPage() {
         accept=".pdf,application/pdf"
         className="sr-only"
         tabIndex={-1}
-        aria-label="Choose a PDF to open"
+        aria-label={t("Choose a PDF to open")}
         onChange={(e) => {
           if (e.target.files?.[0]) openFile(e.target.files[0]);
           e.target.value = "";
@@ -228,7 +229,7 @@ export default function PdfEditorPage() {
         accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
         className="sr-only"
         tabIndex={-1}
-        aria-label="Choose a picture to place on the page"
+        aria-label={t("Choose a picture to place on the page")}
         onChange={(e) => {
           if (e.target.files?.[0]) void addPicture(e.target.files[0]);
           e.target.value = "";
@@ -237,18 +238,18 @@ export default function PdfEditorPage() {
       <SaveStatus />
       <div className="mb-4 flex flex-col gap-3 empty:hidden">
         {!canView && caps && (
-          <Callout tone="warning" title="The PDF editor isn't available on this server">
-            {viewReason} Nothing here can run until the PDF engine is available.
+          <Callout tone="warning" title={t("The PDF editor isn't available on this server")}>
+            {t(viewReason)} {t("Nothing here can run until the PDF engine is available.")}
           </Callout>
         )}
         {state.status === "error" && (
-          <Callout tone="error" title={`“${state.name}” couldn't be opened`}>
-            {state.message}
+          <Callout tone="error" title={t("“{name}” couldn't be opened", { name: state.name })}>
+            {t(state.message)}
           </Callout>
         )}
-        {notice && <Callout tone="info">{notice}</Callout>}
+        {notice && <Callout tone="info">{t(notice)}</Callout>}
         {ready && ready.doc.info.warnings.length > 0 && (
-          <Callout tone="warning" title="Before you change this PDF">
+          <Callout tone="warning" title={t("Before you change this PDF")}>
             <ul>
               {ready.doc.info.warnings.map((w) => (
                 <li key={w}>{w}</li>
@@ -257,43 +258,43 @@ export default function PdfEditorPage() {
           </Callout>
         )}
         {ready?.doc.info.has_form && (
-          <Callout tone="info" title="This PDF has form fields">
-            They are shown as they were saved. Filling them in is not available yet.
+          <Callout tone="info" title={t("This PDF has form fields")}>
+            {t("They are shown as they were saved. Filling them in is not available yet.")}
           </Callout>
         )}
         {dirty && ready && (
           <div role="status" className="flex flex-wrap items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-950 dark:border-brand-900 dark:bg-brand-900/20 dark:text-brand-100">
             <span className="min-w-0 flex-1">
-              <strong className="font-semibold">Changes not saved.</strong> The new PDF will have {plural(plan.length, "page")}
-              {plan.length !== ready.doc.info.page_count ? ` (the original has ${ready.doc.info.page_count})` : ""}
-              {annotationCount > 0 ? ` and ${plural(annotationCount, "annotation")}` : ""}. Nothing is saved until you press Save copy.
+              <strong className="font-semibold">{t("Changes not saved.")}</strong> {t("The new PDF will have {pages}", { pages: plural(plan.length, "page") })}
+              {plan.length !== ready.doc.info.page_count ? ` ${t("(the original has {n})", { n: ready.doc.info.page_count })}` : ""}
+              {annotationCount > 0 ? ` ${t("and {annotations}", { annotations: plural(annotationCount, "annotation") })}` : ""}. {t("Nothing is saved until you press Save copy.")}
             </span>
             {planDirty && (
               <Button size="sm" icon={<RotateCcw className="size-4" aria-hidden />} onClick={resetPlan}>
-                Reset pages
+                {t("Reset pages")}
               </Button>
             )}
             {annotationCount > 0 && (
               <Button size="sm" icon={<Eraser className="size-4" aria-hidden />} onClick={A.clear}>
-                Remove annotations
+                {t("Remove annotations")}
               </Button>
             )}
           </div>
         )}
       </div>
 
-      <div aria-label="PDF editor workspace" className="grid min-h-[34rem] gap-4 lg:h-[calc(100vh-15rem)] lg:grid-cols-[9.5rem_minmax(0,1fr)_17rem] lg:grid-rows-1 [&>*]:min-h-0">
+      <div aria-label={t("PDF editor workspace")} className="grid min-h-[34rem] gap-4 lg:h-[calc(100vh-15rem)] lg:grid-cols-[9.5rem_minmax(0,1fr)_17rem] lg:grid-rows-1 [&>*]:min-h-0">
         {ready && images ? (
           <div className="max-h-56 min-h-0 lg:max-h-none [&>aside]:h-full">
             <PdfThumbnails key={ready.doc.id} doc={ready.doc} images={images} />
           </div>
         ) : (
-          <aside aria-label="Page thumbnails" className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-            <h2 className="px-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Pages</h2>
-            <p className="rounded-xl border-2 border-dashed border-slate-200 p-3 text-center text-xs text-slate-600 dark:border-slate-700 dark:text-slate-400">Pages appear here once a PDF is open.</p>
+          <aside aria-label={t("Page thumbnails")} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="px-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{t("Pages")}</h2>
+            <p className="rounded-xl border-2 border-dashed border-slate-200 p-3 text-center text-xs text-slate-600 dark:border-slate-700 dark:text-slate-400">{t("Pages appear here once a PDF is open.")}</p>
           </aside>
         )}
-        <section aria-label="Page view" className={cx("flex min-h-[28rem] flex-col overflow-hidden rounded-2xl border bg-white dark:bg-slate-900", dragging && canView ? "border-brand-600 ring-2 ring-brand-600" : "border-slate-200 dark:border-slate-800")}>
+        <section aria-label={t("Page view")} className={cx("flex min-h-[28rem] flex-col overflow-hidden rounded-2xl border bg-white dark:bg-slate-900", dragging && canView ? "border-brand-600 ring-2 ring-brand-600" : "border-slate-200 dark:border-slate-800")}>
           <EditorToolbar enabled={!!ready} pageCount={ready ? plan.length : 0} percent={percent} />
           {canAnnotate && <AnnotationBar enabled={!!ready} />}
           <div className="relative min-h-0 flex-1 bg-slate-100 dark:bg-slate-950">
@@ -303,8 +304,8 @@ export default function PdfEditorPage() {
               <div role="status" className="grid size-full place-items-center p-6 text-center">
                 <div className="flex w-64 flex-col items-center gap-3">
                   <Loader2 className="size-8 animate-spin text-brand-600" aria-hidden />
-                  <h2 className="font-semibold text-slate-900 dark:text-slate-100">Opening {state.name}…</h2>
-                  <ProgressBar percent={state.percent} label="Sending the PDF" />
+                  <h2 className="font-semibold text-slate-900 dark:text-slate-100">{t("Opening")} {state.name}…</h2>
+                  <ProgressBar percent={state.percent} label={t("Sending the PDF")} />
                 </div>
               </div>
             ) : state.status === "password" ? (
@@ -313,11 +314,11 @@ export default function PdfEditorPage() {
               <div className="grid size-full place-items-center p-6">
                 <div className="flex max-w-sm flex-col items-center gap-2 text-center text-slate-600 dark:text-slate-400">
                   <ScanLine className="size-8 text-slate-400" aria-hidden />
-                  <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">No PDF open</h2>
-                  <p className="text-sm">{canView ? (dragging ? "Release to open this PDF." : wantSign ? "Open the PDF you want to sign: choose Open PDF, or drop it anywhere on this page." : "Choose Open PDF, or drop a PDF anywhere on this page.") : "Open a PDF to see its pages."}</p>
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t("No PDF open")}</h2>
+                  <p className="text-sm">{t(canView ? (dragging ? "Release to open this PDF." : wantSign ? "Open the PDF you want to sign: choose Open PDF, or drop it anywhere on this page." : "Choose Open PDF, or drop a PDF anywhere on this page.") : "Open a PDF to see its pages.")}</p>
                   {canView && (
                     <Button variant="primary" icon={<FolderOpen className="size-4" aria-hidden />} onClick={() => picker.current?.click()}>
-                      Open PDF
+                      {t("Open PDF")}
                     </Button>
                   )}
                 </div>
@@ -351,21 +352,21 @@ export default function PdfEditorPage() {
       )}
       {discard && (
         <Dialog
-          title="Discard your changes?"
+          title={t("Discard your changes?")}
           description={discard.kind === "open" ? "Opening another PDF will throw away the changes and annotations you made to this one." : "Closing this PDF will throw away the changes and annotations you made to it."}
           onClose={() => resolveDiscard(false)}
           footer={
             <>
               <Button variant="ghost" onClick={() => resolveDiscard(false)}>
-                Keep editing
+                {t("Keep editing")}
               </Button>
               <Button variant="danger" onClick={() => resolveDiscard(true)}>
-                Discard changes
+                {t("Discard changes")}
               </Button>
             </>
           }
         >
-          <p className="text-sm text-slate-600 dark:text-slate-400">Nothing has been saved. Use Save copy first if you want to keep them.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">{t("Nothing has been saved. Use Save copy first if you want to keep them.")}</p>
         </Dialog>
       )}
     </>

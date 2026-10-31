@@ -21,7 +21,10 @@ import { DONATE_URL } from "../../lib/donate";
 import { formatLimit } from "../../lib/format";
 import { useCapabilities } from "../../state/CapabilitiesProvider";
 import { ConversionMachine } from "./ConversionMachine";
+import { PromoVideo } from "./PromoVideo";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 import "./landing.css";
+import { t } from "../../lib/i18n";
 
 /** Adds `is-in` to every [data-reveal] element once it scrolls into view. */
 function useReveal() {
@@ -68,8 +71,8 @@ const GROUPS: {
         to: "/convert",
       },
       {
-        name: "Resize and compress",
-        what: "Smaller dimensions, or a file size you choose.",
+        name: "Compress images",
+        what: "A smaller file size, smaller dimensions, or both.",
         flow: "4 MB → 300 KB",
         to: "/resize",
       },
@@ -111,6 +114,18 @@ const GROUPS: {
         to: "/pdf/split",
       },
       {
+        name: "Compress PDF",
+        what: "Smaller files, text kept sharp; scans shrink the most.",
+        flow: "12 MB → 2 MB",
+        to: "/pdf/compress",
+      },
+      {
+        name: "Add or remove a password",
+        what: "AES-256 protection, or an open copy when you know the password.",
+        flow: ".pdf → 🔒 .pdf",
+        to: "/pdf/protect",
+      },
+      {
         name: "PDF to pictures",
         what: "Every page as a JPG or PNG.",
         flow: ".pdf → .jpg ×n",
@@ -137,7 +152,7 @@ const GROUPS: {
     Icon: FolderArchive,
     tools: [
       {
-        name: "Compress to ZIP",
+        name: "Make a ZIP",
         what: "A folder or a pile of files into one ZIP.",
         flow: "folder/ → .zip",
         to: "/compress",
@@ -180,7 +195,7 @@ function Faq({ q, children }: { q: string; children: ReactNode }) {
   return (
     <details className="group border-b-2 border-aubergine/15 py-5 dark:border-peel/15">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-display text-lg font-semibold text-aubergine marker:hidden dark:text-peel [&::-webkit-details-marker]:hidden">
-        {q}
+        {t(q)}
         <Plus
           className="size-5 shrink-0 transition-transform duration-300 group-open:rotate-45"
           aria-hidden
@@ -198,12 +213,11 @@ export function Landing() {
   const caps = useCapabilities().caps;
   const perFile = caps?.limits.max_file_bytes
     ? formatLimit(caps.limits.max_file_bytes)
-    : "100 MB";
+    : formatLimit(100 * 1024 * 1024);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    document.title =
-      "OrangeFile: convert, merge and edit files in your browser";
+    document.title = t("OrangeFile: convert, merge and edit files in your browser");
     const on = () => setScrolled(window.scrollY > 24);
     on();
     window.addEventListener("scroll", on, { passive: true });
@@ -222,7 +236,7 @@ export function Landing() {
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-aubergine focus:px-4 focus:py-2 focus:text-peel"
       >
-        Skip to content
+        {t("Skip to content")}
       </a>
 
       {/* ------------------------------------------------------------------ navigation */}
@@ -230,7 +244,7 @@ export function Landing() {
         className={`fixed inset-x-0 top-0 z-40 transition-[background-color,box-shadow] duration-300 ${scrolled ? "bg-peel/90 shadow-[0_1px_0_0_rgb(43_15_46/0.12)] backdrop-blur-md dark:bg-night/90" : ""}`}
       >
         <nav
-          aria-label="Main"
+          aria-label={t("Main")}
           className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6"
         >
           <Link to="/" className="flex items-center gap-2.5 rounded-lg">
@@ -244,7 +258,7 @@ export function Landing() {
             <span
               className={`font-display text-xl font-bold tracking-tight ${scrolled ? "text-aubergine dark:text-peel" : "text-aubergine"}`}
             >
-              OrangeFile
+              {t("OrangeFile")}
             </span>
           </Link>
           <div className="hidden items-center gap-7 text-sm font-semibold md:flex">
@@ -259,16 +273,19 @@ export function Landing() {
                 href={href}
                 className={`underline-offset-4 hover:underline ${scrolled ? "text-aubergine dark:text-peel" : "text-aubergine"}`}
               >
-                {label}
+                {t(label)}
               </a>
             ))}
           </div>
+          <div className="flex items-center gap-2">
+          <LanguageSwitch tone="landing" scrolled={scrolled} />
           <Link
             to="/app"
             className="inline-flex items-center gap-2 rounded-full bg-aubergine px-4 py-2 text-sm font-semibold text-peel transition-transform hover:-translate-y-0.5 dark:border dark:border-peel/20"
           >
-            Open the app <ArrowRight className="size-4" aria-hidden />
+            {t("Open the app")} <ArrowRight className="size-4" aria-hidden />
           </Link>
+          </div>
         </nav>
       </header>
 
@@ -281,17 +298,17 @@ export function Landing() {
                 className="lp-rise font-mono text-xs font-bold tracking-[0.18em] text-aubergine uppercase"
                 style={{ animationDelay: "0ms" }}
               >
-                .jpg .png .webp .pdf .docx .xlsx .pptx .zip
+                {t(".jpg .png .webp .pdf .docx .xlsx .pptx .zip")}
               </p>
               <h1 className="mt-5 font-display text-[clamp(2.6rem,6.2vw,5.25rem)] leading-[0.95] font-extrabold tracking-[-0.035em] text-aubergine">
-                {["Turn the file", "you have into", "the one"].map(
+                {["Turn the file", "you have into", "the one"].filter((line) => t(line)).map(
                   (line, n) => (
                     <span
                       key={line}
                       className="lp-rise block"
                       style={{ animationDelay: `${90 + n * 90}ms` }}
                     >
-                      {line}
+                      {t(line)}
                     </span>
                   ),
                 )}
@@ -299,17 +316,14 @@ export function Landing() {
                   className="lp-rise block"
                   style={{ animationDelay: "360ms" }}
                 >
-                  <span className="lp-marker">you need.</span>
+                  <span className="lp-marker">{t("you need.")}</span>
                 </span>
               </h1>
               <p
                 className="lp-rise mt-7 max-w-xl text-lg leading-relaxed text-aubergine"
                 style={{ animationDelay: "450ms" }}
               >
-                Convert pictures, merge and edit PDFs, turn Word, Excel and
-                PowerPoint files into PDF, and zip folders, right in your
-                browser. Free, no account, and your files are deleted 15 minutes
-                after they're ready.
+                {t("Convert pictures, merge and edit PDFs, turn Word, Excel and PowerPoint files into PDF, and zip folders, right in your browser. Free, no account, and your files are deleted 15 minutes after they're ready.")}
               </p>
               <div
                 className="lp-rise mt-9 flex flex-wrap gap-3"
@@ -319,7 +333,7 @@ export function Landing() {
                   to="/app"
                   className="group inline-flex items-center gap-2.5 rounded-full bg-aubergine px-7 py-4 text-base font-semibold text-peel shadow-[4px_4px_0_0_var(--color-peel)] transition-transform hover:-translate-y-0.5"
                 >
-                  Open OrangeFile
+                  {t("Open OrangeFile")}
                   <ArrowRight
                     className="size-5 transition-transform group-hover:translate-x-1"
                     aria-hidden
@@ -329,16 +343,16 @@ export function Landing() {
                   href="#tools"
                   className="inline-flex items-center gap-2 rounded-full border-2 border-aubergine px-7 py-4 text-base font-semibold text-aubergine transition-colors hover:bg-aubergine/10"
                 >
-                  See every tool
+                  {t("See every tool")}
                 </a>
               </div>
               <ul
                 className="lp-rise mt-9 flex flex-wrap gap-x-6 gap-y-2 font-mono text-xs font-semibold text-aubergine"
                 style={{ animationDelay: "630ms" }}
               >
-                <li>✓ No sign-up</li>
-                <li>✓ Up to {perFile} per file</li>
-                <li>✓ Deleted after 15 min</li>
+                <li>{t("✓ No sign-up")}</li>
+                <li>{t("✓ Up to {size} per file", { size: perFile })}</li>
+                <li>{t("✓ Deleted after 15 min")}</li>
               </ul>
             </div>
             <div className="lp-rise" style={{ animationDelay: "300ms" }}>
@@ -347,16 +361,17 @@ export function Landing() {
           </div>
         </div>
 
+        <PromoVideo />
+
         {/* ------------------------------------------------------------------ tools, grouped by what you start with */}
         <Section id="tools" className="py-24 sm:py-32">
           <div data-reveal className="max-w-2xl">
-            <Eyebrow>Tools</Eyebrow>
+            <Eyebrow>{t("Tools")}</Eyebrow>
             <h2 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-              Start from what you have.
+              {t("Start from what you have.")}
             </h2>
             <p className="mt-4 text-lg text-aubergine-muted dark:text-night-muted">
-              Pick the kind of file in front of you. Every tool opens straight
-              away, nothing to install.
+              {t("Pick the kind of file in front of you. Every tool opens straight away, nothing to install.")}
             </p>
           </div>
           <div className="mt-14 grid items-start gap-5 md:grid-cols-2">
@@ -380,30 +395,30 @@ export function Landing() {
                       </span>
                       <div>
                         <h3 className="font-display text-2xl font-bold tracking-tight">
-                          {g.title}
+                          {t(g.title)}
                         </h3>
                         <p className="mt-0.5 font-mono text-xs font-semibold text-aubergine-muted dark:text-night-muted">
-                          {g.formats}
+                          {t(g.formats)}
                         </p>
                       </div>
                     </div>
                     <ul className="mt-6 divide-y-2 divide-aubergine/10 dark:divide-peel/10">
-                      {g.tools.map((t) => (
-                        <li key={t.to}>
+                      {g.tools.map((tl) => (
+                        <li key={tl.to}>
                           <Link
-                            to={t.to}
+                            to={tl.to}
                             className="lp-tool -mx-3 flex items-center gap-4 rounded-xl px-3 py-3.5 transition-colors hover:bg-pith/60 dark:hover:bg-peel/10"
                           >
                             <span className="min-w-0 flex-1">
                               <span className="block font-semibold">
-                                {t.name}
+                                {t(tl.name)}
                               </span>
                               <span className="block text-sm text-aubergine-muted dark:text-night-muted">
-                                {t.what}
+                                {t(tl.what)}
                               </span>
                             </span>
                             <span className="hidden font-mono text-xs font-semibold whitespace-nowrap text-tangerine-deep sm:block dark:text-tangerine-soft">
-                              {t.flow}
+                              {t(tl.flow)}
                             </span>
                             <ArrowUpRight
                               className="lp-arrow size-5 shrink-0"
@@ -426,9 +441,9 @@ export function Landing() {
           className="border-y-2 border-aubergine/10 bg-pith/40 py-24 sm:py-28 dark:border-peel/10 dark:bg-aubergine/40"
         >
           <div data-reveal className="max-w-2xl">
-            <Eyebrow>How it works</Eyebrow>
+            <Eyebrow>{t("How it works")}</Eyebrow>
             <h2 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-              Three steps. Usually under a minute.
+              {t("Three steps. Usually under a minute.")}
             </h2>
           </div>
           <div data-reveal className="relative mt-16">
@@ -462,10 +477,10 @@ export function Landing() {
                     </span>
                   </span>
                   <h3 className="mt-5 font-display text-xl font-bold">
-                    {s.title}
+                    {t(s.title)}
                   </h3>
                   <p className="mx-auto mt-2 max-w-xs text-aubergine-muted dark:text-night-muted">
-                    {s.text}
+                    {t(s.text)}
                   </p>
                 </li>
               ))}
@@ -479,16 +494,15 @@ export function Landing() {
             <div className="grid gap-12 p-8 sm:p-12 lg:grid-cols-[1fr_1.1fr] lg:p-16">
               <div data-reveal>
                 <p className="font-mono text-xs font-bold tracking-[0.18em] text-mint uppercase">
-                  Privacy
+                  {t("Privacy")}
                 </p>
                 <h2 className="mt-3 font-display text-4xl leading-[1.02] font-bold tracking-tight sm:text-6xl">
-                  We don't keep
+                  {t("We don't keep")}
                   <br />
-                  your files.
+                  {t("your files.")}
                 </h2>
                 <p className="mt-6 max-w-md text-lg text-night-muted">
-                  They exist on our server only as long as it takes to process
-                  them and for you to download the result.
+                  {t("They exist on our server only as long as it takes to process them and for you to download the result.")}
                 </p>
               </div>
               <ul className="grid gap-4 sm:grid-cols-2">
@@ -521,8 +535,8 @@ export function Landing() {
                     className="rounded-2xl border border-peel/15 bg-night/40 p-5"
                   >
                     <p.Icon className="size-6 text-mint" aria-hidden />
-                    <h3 className="mt-3 font-semibold">{p.title}</h3>
-                    <p className="mt-1.5 text-sm text-night-muted">{p.text}</p>
+                    <h3 className="mt-3 font-semibold">{t(p.title)}</h3>
+                    <p className="mt-1.5 text-sm text-night-muted">{t(p.text)}</p>
                   </li>
                 ))}
               </ul>
@@ -534,34 +548,26 @@ export function Landing() {
         <Section id="faq" className="pb-24 sm:pb-32">
           <div className="grid gap-10 lg:grid-cols-[1fr_2fr]">
             <div data-reveal>
-              <Eyebrow>Questions</Eyebrow>
+              <Eyebrow>{t("Questions")}</Eyebrow>
               <h2 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-                Good to know.
+                {t("Good to know.")}
               </h2>
             </div>
             <div data-reveal>
               <Faq q="Is it really free?">
-                Yes. There is no paid plan and no account. To keep it fair for
-                everyone there is a daily upload allowance per visitor, shown in
-                the app, which resets at midnight UTC.
+                {t("Yes. There is no paid plan and no account. To keep it fair for everyone there is a daily upload allowance per visitor, shown in the app, which resets at midnight UTC.")}
               </Faq>
               <Faq q="How big can my files be?">
-                Up to {perFile} per file. You can send several files at once for
-                tools such as merging PDFs or making a ZIP.
+                {t("Up to {size} per file. You can send several files at once for tools such as merging PDFs or making a ZIP.", { size: perFile })}
               </Faq>
               <Faq q="Can I open a password-protected PDF?">
-                Yes, if you know the password. You type it in your browser; it's
-                used to open the file and isn't stored.
+                {t("Yes, if you know the password. You type it in your browser; it's used to open the file and isn't stored.")}
               </Faq>
               <Faq q="Will my Word document look the same as a PDF?">
-                In most cases, yes: pages, fonts and images are kept. Documents
-                that rely on fonts we don't have, or on unusual layout features,
-                can come out slightly different, so check the result before you
-                send it.
+                {t("In most cases, yes: pages, fonts and images are kept. Documents that rely on fonts we don't have, or on unusual layout features, can come out slightly different, so check the result before you send it.")}
               </Faq>
               <Faq q="What happens to my files afterwards?">
-                They are deleted from the server automatically, 15 minutes after
-                the result is ready. Download it before then.
+                {t("They are deleted from the server automatically, 15 minutes after the result is ready. Download it before then.")}
               </Faq>
             </div>
           </div>
@@ -574,16 +580,16 @@ export function Landing() {
             className="lp-field relative overflow-hidden rounded-[2rem] border-2 border-aubergine px-6 py-16 text-center sm:px-12 sm:py-20"
           >
             <h2 className="mx-auto max-w-3xl font-display text-4xl leading-[1.02] font-extrabold tracking-tight text-aubergine sm:text-6xl">
-              Got a file in the wrong format?
+              {t("Got a file in the wrong format?")}
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg text-aubergine">
-              Fix it now. It takes less time than reading this sentence twice.
+              {t("Fix it now. It takes less time than reading this sentence twice.")}
             </p>
             <Link
               to="/app"
               className="group mt-9 inline-flex items-center gap-2.5 rounded-full bg-aubergine px-8 py-4 text-base font-semibold text-peel shadow-[4px_4px_0_0_var(--color-peel)] transition-transform hover:-translate-y-0.5"
             >
-              Open OrangeFile{" "}
+              {t("Open OrangeFile")}{" "}
               <ArrowRight
                 className="size-5 transition-transform group-hover:translate-x-1"
                 aria-hidden
@@ -601,14 +607,13 @@ export function Landing() {
               >
                 <div>
                   <p className="font-mono text-xs font-bold tracking-[0.18em] uppercase">
-                    Support
+                    {t("Support")}
                   </p>
                   <h2 className="mt-3 font-display text-4xl leading-[1.02] font-bold tracking-tight sm:text-5xl">
-                    Free, no ads. Kept going by people like you.
+                    {t("Free, no ads. Kept going by people like you.")}
                   </h2>
                   <p className="mt-4 max-w-xl text-lg">
-                    OrangeFile is made by one developer. If it saved you time, a
-                    donation helps pay for the server and for the next tools.
+                    {t("OrangeFile is made by one developer. If it saved you time, a donation helps pay for the server and for the next tools.")}
                   </p>
                 </div>
                 <div className="flex flex-col items-start gap-3 md:items-end">
@@ -622,11 +627,11 @@ export function Landing() {
                       className="size-5 transition-transform group-hover:scale-110"
                       aria-hidden
                     />
-                    Donate with PayPal
-                    <span className="sr-only">(opens in a new tab)</span>
+                    {t("Donate with PayPal")}
+                    <span className="sr-only">{t("(opens in a new tab)")}</span>
                   </a>
                   <p className="font-mono text-xs font-semibold">
-                    Any amount · card or PayPal account
+                    {t("Any amount · card or PayPal account")}
                   </p>
                 </div>
               </div>
@@ -645,23 +650,23 @@ export function Landing() {
               height={24}
               className="size-6 rounded-md"
             />
-            <span className="font-display font-bold">OrangeFile</span>
+            <span className="font-display font-bold">{t("OrangeFile")}</span>
             <span className="text-aubergine-muted dark:text-night-muted">
               © {new Date().getFullYear()}
             </span>
           </div>
           <nav
-            aria-label="Footer"
+            aria-label={t("Footer")}
             className="flex flex-wrap gap-x-6 gap-y-2 font-semibold"
           >
             <Link to="/app" className="hover:underline">
-              Open the app
+              {t("Open the app")}
             </Link>
             <a href="#tools" className="hover:underline">
-              Tools
+              {t("Tools")}
             </a>
             <a href="#privacy" className="hover:underline">
-              Privacy
+              {t("Privacy")}
             </a>
             {DONATE_URL && (
               <a
@@ -670,11 +675,11 @@ export function Landing() {
                 rel="noopener noreferrer"
                 className="hover:underline"
               >
-                Donate<span className="sr-only"> (opens in a new tab)</span>
+                {t("Donate")}<span className="sr-only"> {t("(opens in a new tab)")}</span>
               </a>
             )}
             <Link to="/about" className="hover:underline">
-              About and licences
+              {t("About and licences")}
             </Link>
           </nav>
         </div>

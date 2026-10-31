@@ -3,6 +3,7 @@ import { useState } from "react";
 import { cx } from "../../components/ui";
 import { useEditor } from "../../state/EditorProvider";
 import { stepZoom } from "./zoom";
+import { t } from "../../lib/i18n";
 
 /** Page navigation and zoom controls above the preview. */
 export function EditorToolbar({ enabled, pageCount, percent }: { enabled: boolean; pageCount: number; percent: number }) {
@@ -33,12 +34,12 @@ export function EditorToolbar({ enabled, pageCount, percent }: { enabled: boolea
   };
 
   return (
-    <div role="toolbar" aria-label="Page navigation and zoom" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 border-b border-slate-200 px-2 py-1.5 dark:border-slate-800">
+    <div role="toolbar" aria-label={t("Page navigation and zoom")} className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 border-b border-slate-200 px-2 py-1.5 dark:border-slate-800">
       <span className="flex items-center gap-1">
         {btn("Previous page", ChevronLeft, () => setPage(page - 1), { off: page <= 1 })}
         <span className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
           <input
-            aria-label="Page number"
+            aria-label={t("Page number")}
             inputMode="numeric"
             disabled={!enabled}
             value={enabled ? (draft ?? String(page)) : "–"}
@@ -51,13 +52,13 @@ export function EditorToolbar({ enabled, pageCount, percent }: { enabled: boolea
             }}
             className="h-8 w-12 rounded-md border border-slate-300 bg-white text-center tabular-nums disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:disabled:bg-slate-900"
           />
-          <span>of {enabled ? pageCount : "–"}</span>
+          <span>{t("of")} {enabled ? pageCount : "–"}</span>
         </span>
         {btn("Next page", ChevronRight, () => setPage(page + 1), { off: page >= pageCount })}
       </span>
       <span className="flex items-center gap-1">
         {btn("Zoom out", Minus, () => setZoom(stepZoom(percent, -1)))}
-        <output aria-label="Zoom level" className="w-12 text-center text-sm tabular-nums text-slate-600 dark:text-slate-400">
+        <output aria-label={t("Zoom level")} className="w-12 text-center text-sm tabular-nums text-slate-600 dark:text-slate-400">
           {enabled ? `${percent}%` : "—%"}
         </output>
         {btn("Zoom in", Plus, () => setZoom(stepZoom(percent, 1)))}

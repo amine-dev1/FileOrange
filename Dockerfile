@@ -32,10 +32,11 @@ RUN cargo build --release --locked -p file-api --bin file-api
 
 # ---- 4. what runs ---------------------------------------------------------------------------------
 FROM debian:bookworm-slim
-# LibreOffice does the Word/Excel/PowerPoint conversions. Only the three apps we use, no Java, no GUI extras.
+# LibreOffice does the Word/Excel/PowerPoint conversions (only the three apps we use, no Java, no GUI extras).
+# qpdf adds and removes PDF passwords and packs compressed PDFs tighter.
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      ca-certificates tini \
+      ca-certificates tini qpdf \
       libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui \
       fonts-dejavu-core fonts-liberation2 fonts-noto-core \
  && rm -rf /var/lib/apt/lists/*

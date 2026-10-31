@@ -5,6 +5,7 @@ import type { Rotation } from "../plan";
 import { FONT_FAMILY, measureText } from "./measure";
 import { arrowHead, bounds, moveBy, normalized, scaleTo, textHeight, thin, topmostAt, wrapText, BASELINE, LINE_HEIGHT, type Box, type UiAnnotation } from "./model";
 import { NOTE_COLOR, SIGNATURE_COLOR } from "./useAnnotations";
+import { t } from "../../../lib/i18n";
 
 type Pt = { x: number; y: number };
 type Corner = "nw" | "ne" | "sw" | "se";
@@ -220,7 +221,7 @@ export function AnnotationLayer({ srcPage, info, rot, interactive }: { srcPage: 
         width="100%"
         height="100%"
         role="group"
-        aria-label={`Annotations on page ${srcPage}`}
+        aria-label={t("Annotations on page {n}", { n: srcPage })}
         tabIndex={interactive ? 0 : -1}
         style={{ position: "absolute", inset: 0, overflow: "hidden", touchAction: "none", cursor, pointerEvents: interactive ? "auto" : "none", outline: "none" }}
         onPointerDown={onPointerDown}
@@ -414,7 +415,7 @@ function TextEditor({ a, onDone, onSize }: { a: Extract<UiAnnotation, { kind: "t
     <foreignObject x={a.x} y={a.y} width={w} height={h} onPointerDown={(e) => e.stopPropagation()}>
       <textarea
         ref={ref}
-        aria-label="Text of the annotation"
+        aria-label={t("Text of the annotation")}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={() => onDone(text)}

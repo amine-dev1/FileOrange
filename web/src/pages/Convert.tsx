@@ -12,10 +12,11 @@ import type { OperationReport } from "../lib/types";
 import { useCapabilities } from "../state/CapabilitiesProvider";
 import { useJobs } from "../state/JobsProvider";
 import { useSelection } from "../state/SelectionProvider";
+import { t } from "../lib/i18n";
 
 export function ConvertPage() {
   return (
-    <ToolShell tool="convert" opId="convert_image" title="Convert images" subtitle="Change pictures between formats. Your originals are never changed.">
+    <ToolShell tool="convert" opId="convert_image" title={t("Convert images")} subtitle={t("Change pictures between formats. Your originals are never changed.")}>
       {(op) => <ConvertForm op={op} />}
     </ToolShell>
   );
@@ -51,23 +52,23 @@ function ConvertForm({ op }: { op: OperationReport }) {
 
   return (
     <>
-      <FilesCard rows={rows} accept={extensionsFor(caps!, op.inputs)} hint={`${labels(caps!, op.inputs)} pictures`} noun="picture" />
-      <Card title="Options">
+      <FilesCard camera rows={rows} accept={extensionsFor(caps!, op.inputs)} hint={t("{formats} pictures", { formats: labels(caps!, op.inputs) })} noun="picture" />
+      <Card title={t("Options")}>
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <Segmented
-              label="Convert to"
+              label={t("Convert to")}
               value={format ?? ""}
               onChange={setPicked}
-              options={op.outputs.map((id) => ({ value: id, label: formatLabel(caps!, id), disabled: !reachable.includes(id), reason: `Not every selected file can be converted to ${formatLabel(caps!, id)}.` }))}
+              options={op.outputs.map((id) => ({ value: id, label: formatLabel(caps!, id), disabled: !reachable.includes(id), reason: t("Not every selected file can be converted to {format}.", { format: formatLabel(caps!, id) }) }))}
             />
-            {sameFormat && <p className="text-xs text-slate-600 dark:text-slate-400">Your files are already {formatLabel(caps!, format!)}. This makes re-encoded copies, which is useful for removing photo information or changing quality.</p>}
-            {items.length > 0 && reachable.length === 0 && <p className="text-xs text-red-700 dark:text-red-300">These files can't all be converted to the same format. Convert them in separate batches.</p>}
+            {sameFormat && <p className="text-xs text-slate-600 dark:text-slate-400">{t("Your files are already {format}. This makes re-encoded copies, which is useful for removing photo information or changing quality.", { format: formatLabel(caps!, format!) })}</p>}
+            {items.length > 0 && reachable.length === 0 && <p className="text-xs text-red-700 dark:text-red-300">{t("These files can't all be converted to the same format. Convert them in separate batches.")}</p>}
           </div>
           {format && op.options.filter((o) => optionApplies(o, format, values)).map((o) => <OptionField key={o.id} spec={o} value={values[o.id]} onChange={(v) => setValues((s) => ({ ...s, [o.id]: v }))} />)}
           <p className="text-sm">
             <Link to="/about" className="font-medium text-brand-700 underline-offset-2 hover:underline dark:text-brand-300">
-              See every supported conversion
+              {t("See every supported conversion")}
             </Link>
           </p>
         </div>
@@ -75,7 +76,7 @@ function ConvertForm({ op }: { op: OperationReport }) {
       <PreviewNotes preview={preview} />
       <ActionBar note={items.length ? plural(items.length, "file") : "Add at least one picture."}>
         <Button variant="primary" onClick={run} disabled={!valid || !format || !preview.ok || preview.loading}>
-          Convert
+          {t("Convert")}
         </Button>
       </ActionBar>
     </>

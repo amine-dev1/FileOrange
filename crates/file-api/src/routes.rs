@@ -75,6 +75,9 @@ enum Op {
     ImagesToPdf,
     PdfToImages,
     OfficeToPdf,
+    PdfProtect,
+    PdfUnlock,
+    PdfCompress,
 }
 
 impl Op {
@@ -90,6 +93,9 @@ impl Op {
             "images_to_pdf" => Some(Op::ImagesToPdf),
             "pdf_to_images" => Some(Op::PdfToImages),
             "office_to_pdf" => Some(Op::OfficeToPdf),
+            "pdf_protect" => Some(Op::PdfProtect),
+            "pdf_unlock" => Some(Op::PdfUnlock),
+            "pdf_compress" => Some(Op::PdfCompress),
             _ => None,
         }
     }
@@ -105,6 +111,9 @@ impl Op {
             Op::ImagesToPdf => "images_to_pdf",
             Op::PdfToImages => "pdf_to_images",
             Op::OfficeToPdf => "office_to_pdf",
+            Op::PdfProtect => "pdf_protect",
+            Op::PdfUnlock => "pdf_unlock",
+            Op::PdfCompress => "pdf_compress",
         }
     }
     fn core_type(self) -> &'static str {
@@ -119,6 +128,9 @@ impl Op {
             Op::ImagesToPdf => "images_to_pdf",
             Op::PdfToImages => "pdf_to_images",
             Op::OfficeToPdf => "office_to_pdf",
+            Op::PdfProtect => "pdf_protect",
+            Op::PdfUnlock => "pdf_unlock",
+            Op::PdfCompress => "pdf_compress",
         }
     }
 }
@@ -143,7 +155,10 @@ fn build_operation(st: &AppState, op: Op, options: Option<&str>) -> Result<Opera
         | Operation::PdfPages(_)
         | Operation::ImagesToPdf(_)
         | Operation::PdfToImages(_)
-        | Operation::OfficeToPdf(_) => {}
+        | Operation::OfficeToPdf(_)
+        | Operation::PdfProtect(_)
+        | Operation::PdfUnlock(_)
+        | Operation::PdfCompress(_) => {}
     }
     Ok(operation)
 }
@@ -194,7 +209,7 @@ pub async fn create_job(State(st): State<AppState>, Extension(who): Extension<Pr
         match field.name().unwrap_or("") {
             "operation" => {
                 let v = read_text(field, 32).await?;
-                op = Some(Op::parse(&v).ok_or_else(|| ApiError::invalid("operation must be one of compress, extract, convert, pdf_merge, pdf_split, pdf_pages, images_to_pdf, pdf_to_images or office_to_pdf."))?);
+                op = Some(Op::parse(&v).ok_or_else(|| ApiError::invalid("operation must be one of compress, extract, convert, resize, pdf_merge, pdf_split, pdf_pages, images_to_pdf, pdf_to_images, office_to_pdf, pdf_protect, pdf_unlock or pdf_compress."))?);
             }
             "options" => {
                 if op.is_none() {
@@ -536,7 +551,7 @@ pub async fn preview(
     body: Result<Json<PreviewRequest>, axum::extract::rejection::JsonRejection>,
 ) -> Result<Json<PreviewResponse>, ApiError> {
     let Json(req) = body.map_err(|_| ApiError::invalid("The preview request must be JSON with operation, options and files."))?;
-    let op = Op::parse(&req.operation).ok_or_else(|| ApiError::invalid("operation must be one of compress, extract, convert, pdf_merge, pdf_split, pdf_pages, images_to_pdf, pdf_to_images or office_to_pdf."))?;
+    let op = Op::parse(&req.operation).ok_or_else(|| ApiError::invalid("operation must be one of compress, extract, convert, resize, pdf_merge, pdf_split, pdf_pages, images_to_pdf, pdf_to_images, office_to_pdf, pdf_protect, pdf_unlock or pdf_compress."))?;
     let options = if req.options.is_null() { None } else { Some(req.options.to_string()) };
     let mut out = PreviewResponse { ok: true, operation: op.name().into(), engine: None, errors: vec![], warnings: vec![] };
 

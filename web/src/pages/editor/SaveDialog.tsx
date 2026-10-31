@@ -10,6 +10,7 @@ import { useJobs } from "../../state/JobsProvider";
 import { measureText } from "./annotations/measure";
 import { drawable, toWire, usedPictures } from "./annotations/model";
 import { toJobPages } from "./plan";
+import { t } from "../../lib/i18n";
 
 export type SaveMode = "copy" | "extract";
 
@@ -57,27 +58,27 @@ export function SaveDialog({ mode, onClose }: { mode: SaveMode; onClose: () => v
   return (
     <Dialog
       title={mode === "copy" ? "Save a copy" : "Extract pages"}
-      description={mode === "copy" ? `A new PDF with ${plural(chosen.length, "page")}, in the order shown. Your original is not changed.` : `A new PDF with the ${plural(chosen.length, "selected page")}. Your original is not changed.`}
+      description={mode === "copy" ? t("A new PDF with {pages}, in the order shown. Your original is not changed.", { pages: plural(chosen.length, "page") }) : t("A new PDF with the {pages}. Your original is not changed.", { pages: plural(chosen.length, "selected page") })}
       onClose={onClose}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button variant="primary" onClick={run} disabled={blocked}>
-            Save
+            {t("Save")}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
-        <Field label="File name" htmlFor="save-name" hint="“.pdf” is added for you.">
+        <Field label={t("File name")} htmlFor="save-name" hint={t("“.pdf” is added for you.")}>
           <TextInput id="save-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} spellCheck={false} />
         </Field>
-        {wire.length > 0 && <Callout tone="info">{plural(wire.length, "annotation")} will be drawn into the new PDF. They become part of the page and can't be edited afterwards, so keep this editor open if you may want to change them.</Callout>}
+        {wire.length > 0 && <Callout tone="info">{plural(wire.length, "annotation")} {t("will be drawn into the new PDF. They become part of the page and can't be edited afterwards, so keep this editor open if you may want to change them.")}</Callout>}
         {cannotDraw > 0 && (
-          <Callout tone="error" title="Some text can't be saved">
-            {plural(cannotDraw, "text annotation")} use{cannotDraw === 1 ? "s" : ""} characters the built-in PDF font can't draw (it covers Latin letters with accents and common punctuation, not Arabic, Chinese, emoji and so on). Edit or remove {cannotDraw === 1 ? "it" : "them"} to save.
+          <Callout tone="error" title={t("Some text can't be saved")}>
+            {plural(cannotDraw, "text annotation")} {t("use")}{cannotDraw === 1 ? "s" : ""} {t("characters the built-in PDF font can't draw (it covers Latin letters with accents and common punctuation, not Arabic, Chinese, emoji and so on). Edit or remove")} {cannotDraw === 1 ? "it" : "them"} {t("to save.")}
           </Callout>
         )}
         <PreviewNotes preview={preview} />

@@ -83,9 +83,9 @@ export function toolsForFiles(caps: Capabilities, files: { name: string; isDir?:
   const tools = [
     choice("convert_image", "Convert", (op) => (allIn(op.inputs) ? null : `Needs ${labels(caps, op.inputs)} files only.`)),
     ...(operationState(caps, "resize_image").state !== "missing" && kinds.some((k) => k && ["jpeg", "png", "webp"].includes(k.id))
-      ? [choice("resize_image", "Resize", (op) => (allIn(op.inputs) ? null : `Needs ${labels(caps, op.inputs)} pictures only.`))]
+      ? [choice("resize_image", "Compress images", (op) => (allIn(op.inputs) ? null : `Needs ${labels(caps, op.inputs)} pictures only.`))]
       : []),
-    choice("compress", "Compress", () => null),
+    choice("compress", "Make a ZIP", () => null),
     choice("extract", "Extract", (op) => (allIn(op.inputs) ? null : `Needs ${labels(caps, op.inputs)} archives only.`)),
   ];
   // Pictures can become a PDF, documents can become a PDF; both are listed only when they apply to the selection.
@@ -104,6 +104,8 @@ export function toolsForFiles(caps: Capabilities, files: { name: string; isDir?:
     if (have("pdf_merge")) tools.push(choice("pdf_merge", "Merge PDFs", (op) => (pdfs >= 2 && allIn(op.inputs) ? null : "Needs at least two PDFs, and nothing else.")));
     if (have("pdf_split")) tools.push(choice("pdf_split", "Split PDF", (op) => (pdfs === 1 && allIn(op.inputs) ? null : "Needs exactly one PDF.")));
     if (have("pdf_to_images")) tools.push(choice("pdf_to_images", "Save as images", (op) => (allIn(op.inputs) ? null : "Needs PDFs only.")));
+    if (have("pdf_compress")) tools.push(choice("pdf_compress", "Compress PDF", (op) => (allIn(op.inputs) ? null : "Needs PDFs only.")));
+    if (have("pdf_protect")) tools.push(choice("pdf_protect", "Add password", (op) => (allIn(op.inputs) ? null : "Needs PDFs only.")));
   }
   return tools;
 }

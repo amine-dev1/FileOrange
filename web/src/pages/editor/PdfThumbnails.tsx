@@ -7,6 +7,7 @@ import { cx } from "../../components/ui";
 import type { PageImages } from "./pageImages";
 import { turned, type PlanPage } from "./plan";
 import { RotatedPage } from "./RotatedPage";
+import { t } from "../../lib/i18n";
 
 /** Thumbnails are drawn about this wide: sharp at the strip's width on a high-density screen. */
 const THUMB_WIDTH = 256;
@@ -63,15 +64,15 @@ function Thumb({ entry, position, doc, images, current, selected, total, onPoint
     <button
       ref={ref}
       type="button"
-      aria-label={`Page ${position}`}
-      aria-description={entry.src !== position ? `Originally page ${entry.src}` : undefined}
+      aria-label={t("Page {n}", { n: position })}
+      aria-description={entry.src !== position ? t("Originally page {n}", { n: entry.src }) : undefined}
       aria-current={current ? "page" : undefined}
       aria-pressed={selected}
       data-position={position}
       tabIndex={current ? 0 : -1}
       onPointerDown={(e) => onPointerDown(e, entry, position)}
       onClick={(e) => (error ? setRetry((r) => r + 1) : onClick(e, position))}
-      title={error ? `${error} Click to try again.` : `Page ${position} of ${total}. Click to show it; Ctrl or Shift to select several; drag to move.`}
+      title={error ? `${t(error)} ${t("Click to try again.")}` : t("Page {page} of {total}. Click to show it; Ctrl or Shift to select several; drag to move.", { page: position, total })}
       className={cx(
         "flex w-full touch-pan-y flex-col items-center gap-1 rounded-xl border-2 p-1.5 transition-colors",
         selected ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20" : "border-transparent hover:bg-slate-100 dark:hover:bg-slate-800",
@@ -189,8 +190,8 @@ export function PdfThumbnails({ doc, images }: { doc: PdfDocumentResponse; image
 
   const selectedSet = new Set(selected);
   return (
-    <aside aria-label="Page thumbnails" className="flex min-h-0 flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-      <h2 className="px-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Pages</h2>
+    <aside aria-label={t("Page thumbnails")} className="flex min-h-0 flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+      <h2 className="px-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{t("Pages")}</h2>
       <ol ref={listRef} onKeyDown={onKeyDown} className={cx("flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-0.5", dragging && "cursor-grabbing select-none")}>
         {plan.map((entry, i) => (
           <li key={entry.id} className={cx("relative", drop === i && "before:absolute before:-top-1 before:left-0 before:right-0 before:z-10 before:h-0.5 before:rounded before:bg-brand-600", drop === plan.length && i === plan.length - 1 && "after:absolute after:-bottom-1 after:left-0 after:right-0 after:z-10 after:h-0.5 after:rounded after:bg-brand-600")}>

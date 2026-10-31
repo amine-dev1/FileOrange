@@ -481,3 +481,83 @@ async fn unsafe_configurations_do_not_start() {
     c.bind = "0.0.0.0:0".parse().unwrap();
     start(c).await.unwrap().shutdown().await;
 }
+
+// ------------------------------------------------------------------ CAPTCHA
+
+/// A stand-in for Cloudflare's checker: "good" passes, anything else fails. Records what it was asked.
+async fn fake_turnstile() -> (String, std::sync::Arc<std::sync::Mutex<Vec<String>>>) {
+    use axum::{routing::post, Form, Router};
+    let seen = std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+    let log = seen.clone();
+    let app = Router::new().route(
+        "/siteverify",
+        post(move |Form(f): Form<std::collections::HashMap<String, String>>| {
+            let log = log.clone();
+            async move {
+                assert_eq!(f.get("secret").map(String::as_str), Some("server-secret"), "the secret is sent");
+                let answer = f.get("response").cloned().unwrap_or_default();
+                log.lock().unwrap().push(answer.clone());
+                axum::Json(json!({ "success": answer == "good" }))
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    (format!("http://{addr}/siteverify"), seen)
+}
+
+#[tokio::test]
+async fn new_sessions_need_a_passed_captcha_when_configured() {
+    let (url, seen) = fake_turnstile().await;
+    let h = Hosted::with(|c| {
+        c.captcha = Some(file_api::Captcha { site_key: "public-site-key".into(), secret: "server-secret".into(), verify_url: url });
+    })
+    .await;
+    let session = |answer: Option<&str>| {
+        let mut r = h.http.post(h.url("/api/v1/session"));
+        if let Some(a) = answer {
+            r = r.header("x-turnstile-token", a);
+        }
+        r
+    };
+
+    // no answer: told what to show, with the public key only
+    let r = session(None).send().await.unwrap();
+    assert_eq!(r.status(), StatusCode::FORBIDDEN);
+    let body: Value = r.json().await.unwrap();
+    assert_eq!(body["error"]["code"], "CAPTCHA_REQUIRED");
+    assert_eq!(body["captcha"]["provider"], "turnstile");
+    assert_eq!(body["captcha"]["site_key"], "public-site-key");
+    assert!(!body.to_string().contains("server-secret"), "the secret never leaves the server");
+
+    // a wrong answer is checked and refused
+    let r = session(Some("bad")).send().await.unwrap();
+    assert_eq!(r.status(), StatusCode::FORBIDDEN);
+    assert_eq!(r.json::<Value>().await.unwrap()["error"]["code"], "CAPTCHA_FAILED");
+
+    // a right one gives a session
+    let r = session(Some("good")).send().await.unwrap();
+    assert_eq!(r.status(), 200);
+    let s: SessionResponse = r.json().await.unwrap();
+    assert_eq!(seen.lock().unwrap().as_slice(), ["bad", "good"]);
+
+    // extending a valid session needs no new challenge
+    let r = h.http.post(h.url("/api/v1/session")).header("authorization", format!("Bearer {}", s.token)).send().await.unwrap();
+    assert_eq!(r.status(), 200);
+    assert_eq!(seen.lock().unwrap().len(), 2, "Cloudflare wasn't asked again");
+
+    // the session works for the API
+    let r = h.http.get(h.url("/api/v1/me")).header("authorization", format!("Bearer {}", s.token)).send().await.unwrap();
+    assert_eq!(r.status(), 200);
+}
+
+#[tokio::test]
+async fn an_unreachable_captcha_checker_refuses_new_sessions() {
+    let h = Hosted::with(|c| {
+        c.captcha = Some(file_api::Captcha { site_key: "k".into(), secret: "s".into(), verify_url: "http://127.0.0.1:9/siteverify".into() });
+    })
+    .await;
+    let r = h.http.post(h.url("/api/v1/session")).header("x-turnstile-token", "anything").send().await.unwrap();
+    assert_eq!(r.status(), StatusCode::FORBIDDEN, "fails closed");
+}

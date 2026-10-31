@@ -12,7 +12,7 @@ fn main() {
     }
     println!("cargo:rerun-if-changed=build.rs");
 
-    for (crate_name, var) in [("zip", "FC_VER_ZIP"), ("image", "FC_VER_IMAGE"), ("webp", "FC_VER_WEBP_CRATE"), ("libwebp-sys", "FC_VER_LIBWEBP_SYS")] {
+    for (crate_name, var) in [("zip", "FC_VER_ZIP"), ("image", "FC_VER_IMAGE"), ("webp", "FC_VER_WEBP_CRATE"), ("libwebp-sys", "FC_VER_LIBWEBP_SYS"), ("lopdf", "FC_VER_LOPDF")] {
         let mut version = "unknown".to_string();
         let mut lines = text.lines();
         while let Some(l) = lines.next() {

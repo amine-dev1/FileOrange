@@ -1,4 +1,5 @@
 import { API_BASE } from "./base";
+import { turnstileAnswer } from "./captcha";
 import { ApiError, NETWORK, parseError } from "./http";
 
 /**
@@ -29,12 +30,23 @@ function keep(t: string | null) {
   }
 }
 
-async function request(): Promise<void> {
-  let res: Response;
+async function post(extra: Record<string, string> = {}): Promise<Response> {
   try {
-    res = await fetch(`${API_BASE}/session`, { method: "POST", headers: token ? { authorization: `Bearer ${token}` } : {} });
+    return await fetch(`${API_BASE}/session`, { method: "POST", headers: { ...(token ? { authorization: `Bearer ${token}` } : {}), ...extra } });
   } catch {
     throw new ApiError("SERVICE_UNAVAILABLE", NETWORK);
+  }
+}
+
+async function request(): Promise<void> {
+  let res = await post();
+  // A hosted server can ask new visitors to pass a CAPTCHA first; it says which, and with which public key.
+  for (let attempt = 0; res.status === 403 && attempt < 3; attempt++) {
+    const body = (await res.clone().json().catch(() => null)) as { error?: { code?: string }; captcha?: { provider?: string; site_key?: string } } | null;
+    const code = body?.error?.code;
+    if ((code !== "CAPTCHA_REQUIRED" && code !== "CAPTCHA_FAILED") || body?.captcha?.provider !== "turnstile" || !body.captcha.site_key) break;
+    const answer = await turnstileAnswer(body.captcha.site_key);
+    res = await post({ "x-turnstile-token": answer });
   }
   if (res.status === 404) {
     mode = "local";

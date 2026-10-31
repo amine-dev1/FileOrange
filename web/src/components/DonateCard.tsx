@@ -1,5 +1,6 @@
 import { Heart } from "lucide-react";
 import { DONATE_URL } from "../lib/donate";
+import { t } from "../lib/i18n";
 
 /** A quiet ask at the bottom of the dashboard. Opens PayPal in a new tab, so nothing in progress is lost. */
 export function DonateCard() {
@@ -12,9 +13,9 @@ export function DonateCard() {
         </span>
         <div>
           <h2 id="donate-heading" className="font-semibold text-slate-900 dark:text-slate-100">
-            Like OrangeFile? Help keep it free.
+            {t("Like OrangeFile? Help keep it free.")}
           </h2>
-          <p className="mt-0.5 text-sm text-slate-700 dark:text-slate-300">No ads, no account. A donation pays for the server and new tools.</p>
+          <p className="mt-0.5 text-sm text-slate-700 dark:text-slate-300">{t("No ads, no account. A donation pays for the server and new tools.")}</p>
         </div>
       </div>
       <a
@@ -23,8 +24,8 @@ export function DonateCard() {
         rel="noopener noreferrer"
         className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800 dark:bg-brand-700 dark:hover:bg-brand-800"
       >
-        <Heart className="size-4" aria-hidden /> Donate with PayPal
-        <span className="sr-only">(opens in a new tab)</span>
+        <Heart className="size-4" aria-hidden /> {t("Donate with PayPal")}
+        <span className="sr-only">{t("(opens in a new tab)")}</span>
       </a>
     </section>
   );

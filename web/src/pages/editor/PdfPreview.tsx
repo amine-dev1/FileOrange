@@ -11,6 +11,7 @@ import type { PageImages } from "./pageImages";
 import { turned } from "./plan";
 import { RotatedPage } from "./RotatedPage";
 import { displayWidth, percentOf, requestWidth, stepZoom, type Box } from "./zoom";
+import { t } from "../../lib/i18n";
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
@@ -91,23 +92,23 @@ export function PdfPreview({ doc, images }: { doc: PdfDocumentResponse; images: 
   };
 
   return (
-    <div ref={boxRef} tabIndex={0} role="region" aria-label="Page preview" aria-busy={loading || undefined} onKeyDown={onKeyDown} className="size-full overflow-auto p-6 [scrollbar-gutter:stable]">
+    <div ref={boxRef} tabIndex={0} role="region" aria-label={t("Page preview")} aria-busy={loading || undefined} onKeyDown={onKeyDown} className="size-full overflow-auto p-6 [scrollbar-gutter:stable]">
       <div data-testid="page-frame" className="relative mx-auto bg-white shadow-lg ring-1 ring-slate-300 dark:ring-slate-700" style={{ width: shownWidth, aspectRatio: `${info.width_pt} / ${info.height_pt}` }}>
-        {url ? <RotatedPage url={url} info={source} rot={entry.rot} alt={`Page ${page} of ${plan.length}`} /> : <div className="skeleton absolute inset-0" aria-hidden />}
+        {url ? <RotatedPage url={url} info={source} rot={entry.rot} alt={t("Page {page} of {total}", { page, total: plan.length })} /> : <div className="skeleton absolute inset-0" aria-hidden />}
         {url && <AnnotationLayer key={entry.src} srcPage={entry.src} info={source} rot={entry.rot} interactive={canAnnotate} />}
         {loading && url === null && (
           <span role="status" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-900/80 px-3 py-1.5 text-xs text-white">
-            Drawing page {page}…
+            {t("Drawing page")} {page}…
           </span>
         )}
       </div>
       {failed && (
         <div role="alert" className="mx-auto mt-4 flex max-w-lg flex-col items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-950 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
           <p>
-            <strong className="font-semibold">Page {page} couldn't be drawn.</strong> {failed.message}
+            <strong className="font-semibold">{t("Page")} {page} {t("couldn't be drawn.")}</strong> {failed.message}
           </p>
           <Button size="sm" icon={<RefreshCw className="size-4" aria-hidden />} onClick={() => setRetry((n) => n + 1)}>
-            Try again
+            {t("Try again")}
           </Button>
         </div>
       )}

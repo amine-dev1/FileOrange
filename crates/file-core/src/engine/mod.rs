@@ -6,6 +6,8 @@
 
 pub mod image;
 pub mod office;
+pub mod pdfsize;
+pub mod qpdf;
 pub mod pdf;
 pub mod zip;
 
@@ -217,11 +219,18 @@ impl Registry {
 
     /// Both external engines configured (where PDFium and LibreOffice are).
     pub fn bundled_with_office(pdf: Arc<pdf::PdfHost>, office: Arc<office::OfficeHost>) -> Self {
+        Self::bundled_with_hosts(pdf, office, Arc::new(qpdf::QpdfHost::new(qpdf::QpdfConfig::for_app())))
+    }
+
+    /// Every external program configured (PDFium, LibreOffice, qpdf).
+    pub fn bundled_with_hosts(pdf: Arc<pdf::PdfHost>, office: Arc<office::OfficeHost>, qpdf: Arc<qpdf::QpdfHost>) -> Self {
         Self::new(vec![
             Arc::new(zip::ZipEngine),
             Arc::new(image::ImageEngine),
             Arc::new(pdf::PdfEngine::new(pdf)),
             Arc::new(office::OfficeEngine::new(office)),
+            Arc::new(qpdf::QpdfEngine::new(qpdf.clone())),
+            Arc::new(pdfsize::PdfSizeEngine::new(qpdf)),
         ])
     }
 

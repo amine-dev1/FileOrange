@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { itemsFromDrop, type FileItem } from "../lib/files";
+import { t } from "../lib/i18n";
 
 type Handler = (items: FileItem[]) => void;
 interface Ctx {
@@ -62,7 +63,7 @@ export function DropProvider({ children }: { children: ReactNode }) {
       {children}
       {dragging && (
         <div className="pointer-events-none fixed inset-0 z-40 grid place-items-center bg-brand-600/15 backdrop-blur-[1px]" aria-hidden>
-          <div className="rounded-2xl border-2 border-dashed border-brand-600 bg-white/90 px-8 py-6 text-lg font-semibold text-brand-800 shadow-xl dark:bg-slate-900/90 dark:text-brand-300">Drop to add</div>
+          <div className="rounded-2xl border-2 border-dashed border-brand-600 bg-white/90 px-8 py-6 text-lg font-semibold text-brand-800 shadow-xl dark:bg-slate-900/90 dark:text-brand-300">{t("Drop to add")}</div>
         </div>
       )}
     </DropContext.Provider>

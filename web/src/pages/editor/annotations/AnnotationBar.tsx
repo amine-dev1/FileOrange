@@ -3,6 +3,7 @@ import { Segmented, cx } from "../../../components/ui";
 import { useEditor } from "../../../state/EditorProvider";
 import { COLORS, HIGHLIGHT_COLORS, MAX_WIDTH_PT } from "./model";
 import type { ShapeChoice, ToolKey } from "./useAnnotations";
+import { t } from "../../../lib/i18n";
 
 const COLOR_NAMES: Record<string, string> = {
   "#FFEB3B": "Yellow",
@@ -76,21 +77,21 @@ export function AnnotationBar({ enabled }: { enabled: boolean }) {
 
   const off = !enabled;
   return (
-    <div role="toolbar" aria-label="Annotation tools" data-testid="annotation-bar" className="flex min-h-[4.25rem] flex-wrap content-center items-center gap-x-5 gap-y-1.5 border-b border-slate-200 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-400">
+    <div role="toolbar" aria-label={t("Annotation tools")} data-testid="annotation-bar" className="flex min-h-[4.25rem] flex-wrap content-center items-center gap-x-5 gap-y-1.5 border-b border-slate-200 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-400">
       <span className="flex items-center gap-0.5">
-        <BarButton label="Undo" off={off || !A.canUndo} onClick={A.undo}>
+        <BarButton label={t("Undo")} off={off || !A.canUndo} onClick={A.undo}>
           <Undo2 className="size-4.5" aria-hidden />
         </BarButton>
-        <BarButton label="Redo" off={off || !A.canRedo} onClick={A.redo}>
+        <BarButton label={t("Redo")} off={off || !A.canRedo} onClick={A.redo}>
           <Redo2 className="size-4.5" aria-hidden />
         </BarButton>
-        <BarButton label="Delete selected annotation" off={off || !selected} onClick={() => selected && A.remove(selected.id)}>
+        <BarButton label={t("Delete selected annotation")} off={off || !selected} onClick={() => selected && A.remove(selected.id)}>
           <Trash2 className="size-4.5" aria-hidden />
         </BarButton>
       </span>
       {tool === "shapes" && (
         <Segmented<ShapeChoice>
-          label="Shape"
+          label={t("Shape")}
           value={A.options.shape}
           onChange={(shape) => A.setOptions({ shape })}
           options={[
@@ -103,19 +104,19 @@ export function AnnotationBar({ enabled }: { enabled: boolean }) {
       )}
       {tool === "shapes" && (A.options.shape === "rect" || A.options.shape === "ellipse") && (
         <label className="flex items-center gap-1.5">
-          <input type="checkbox" checked={A.options.filled} onChange={(e) => A.setOptions({ filled: e.target.checked })} className="accent-brand-600" /> Filled
+          <input type="checkbox" checked={A.options.filled} onChange={(e) => A.setOptions({ filled: e.target.checked })} className="accent-brand-600" /> {t("Filled")}
         </label>
       )}
       {colored && (
-        <span role="radiogroup" aria-label="Colour" className="flex items-center gap-1.5">
+        <span role="radiogroup" aria-label={t("Colour")} className="flex items-center gap-1.5">
           {palette.map((c) => (
             <button
               key={c}
               type="button"
               role="radio"
               aria-checked={c.toLowerCase() === currentColor.toLowerCase()}
-              aria-label={COLOR_NAMES[c] ?? c}
-              title={COLOR_NAMES[c] ?? c}
+              aria-label={t(COLOR_NAMES[c] ?? c)}
+              title={t(COLOR_NAMES[c] ?? c)}
               onClick={() => pickColor(c)}
               style={{ background: c }}
               className="size-6 rounded-full border-2 border-white shadow ring-1 ring-slate-300 aria-checked:ring-2 aria-checked:ring-brand-600 dark:border-slate-900 dark:ring-slate-600"
@@ -125,20 +126,20 @@ export function AnnotationBar({ enabled }: { enabled: boolean }) {
       )}
       {isLine && (
         <label className="flex items-center gap-2">
-          Width
-          <input type="range" min={1} max={12} value={Math.min(width, MAX_WIDTH_PT)} onChange={(e) => pickWidth(Number(e.target.value))} aria-label="Line width" className="w-24 accent-brand-600" />
-          <output className="w-9 tabular-nums text-slate-800 dark:text-slate-200">{width}pt</output>
+          {t("Width")}
+          <input type="range" min={1} max={12} value={Math.min(width, MAX_WIDTH_PT)} onChange={(e) => pickWidth(Number(e.target.value))} aria-label={t("Line width")} className="w-24 accent-brand-600" />
+          <output className="w-9 tabular-nums text-slate-800 dark:text-slate-200">{width}{t("pt")}</output>
         </label>
       )}
       {isText && (
         <label className="flex items-center gap-2">
-          Size
-          <input type="range" min={8} max={48} value={size} onChange={(e) => pickSize(Number(e.target.value))} aria-label="Text size" className="w-24 accent-brand-600" />
-          <output className="w-9 tabular-nums text-slate-800 dark:text-slate-200">{size}pt</output>
+          {t("Size")}
+          <input type="range" min={8} max={48} value={size} onChange={(e) => pickSize(Number(e.target.value))} aria-label={t("Text size")} className="w-24 accent-brand-600" />
+          <output className="w-9 tabular-nums text-slate-800 dark:text-slate-200">{size}{t("pt")}</output>
         </label>
       )}
       <span role="status" className="min-w-0 flex-1 basis-56">
-        {tool === "image" && !A.pending ? "Choose a picture first." : tool ? TOOL_HELP[tool] : selected ? "Drag to move, use the corners to resize, Delete to remove. Double-click text to edit it." : "Choose a tool on the right, or click an annotation to select it."}
+        {t(tool === "image" && !A.pending ? "Choose a picture first." : tool ? TOOL_HELP[tool] : selected ? "Drag to move, use the corners to resize, Delete to remove. Double-click text to edit it." : "Choose a tool on the right, or click an annotation to select it.")}
       </span>
     </div>
   );

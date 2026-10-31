@@ -34,7 +34,9 @@ function siteHeaders(apiOrigin: string) {
     apply: "build" as const,
     writeBundle(opts: { dir?: string }) {
       const dir = opts.dir ?? "dist";
-      const csp = ["default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "font-src 'self'", `connect-src 'self'${apiOrigin ? " " + apiOrigin : ""}`, "object-src 'none'", "base-uri 'none'", "frame-ancestors 'none'", "form-action 'self'"].join("; ");
+      // Cloudflare Turnstile (only loaded when the server asks new visitors for a CAPTCHA) needs its script and frame.
+      const cf = "https://challenges.cloudflare.com";
+      const csp = ["default-src 'self'", `script-src 'self' ${cf}`, "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "font-src 'self'", `connect-src 'self'${apiOrigin ? " " + apiOrigin : ""}`, `frame-src ${cf}`, "object-src 'none'", "base-uri 'none'", "frame-ancestors 'none'", "form-action 'self'"].join("; ");
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "_headers"), `/*\n  Content-Security-Policy: ${csp}\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: no-referrer\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n`);
     },

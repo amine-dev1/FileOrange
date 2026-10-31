@@ -10,6 +10,7 @@ import type { OperationReport } from "../lib/types";
 import { useCapabilities } from "../state/CapabilitiesProvider";
 import { useJobs } from "../state/JobsProvider";
 import { useSelection } from "../state/SelectionProvider";
+import { t } from "../lib/i18n";
 
 type SizeMode = "none" | "percent" | "fit";
 type Target = "keep" | "jpeg" | "png" | "webp";
@@ -27,7 +28,7 @@ const whole = (s: string) => (/^\d+$/.test(s.trim()) ? Number(s.trim()) : NaN);
 
 export function ResizePage() {
   return (
-    <ToolShell tool="resize" opId="resize_image" title="Resize and compress images" subtitle="Make pictures smaller in size or in file size. Your originals are never changed.">
+    <ToolShell tool="resize" opId="resize_image" title={t("Compress images")} subtitle={t("Make pictures lighter: a smaller file size, smaller dimensions, or both. Your originals are never changed.")}>
       {(op) => <Form op={op} />}
     </ToolShell>
   );
@@ -87,12 +88,12 @@ function Form({ op }: { op: OperationReport }) {
 
   return (
     <>
-      <FilesCard rows={rows} accept={extensionsFor(caps!, op.inputs)} hint={`${labels(caps!, op.inputs)} pictures`} noun="picture" />
+      <FilesCard camera rows={rows} accept={extensionsFor(caps!, op.inputs)} hint={t("{formats} pictures", { formats: labels(caps!, op.inputs) })} noun="picture" />
 
-      <Card title="Size">
+      <Card title={t("Size")}>
         <div className="flex flex-col gap-5">
           <Segmented<SizeMode>
-            label="Picture size"
+            label={t("Picture size")}
             value={mode}
             onChange={setMode}
             options={[
@@ -102,9 +103,9 @@ function Form({ op }: { op: OperationReport }) {
             ]}
           />
           {mode === "percent" && (
-            <Field label="Percentage of the original size" htmlFor="rs-percent" hint="Both sides shrink by the same amount, so the proportions stay the same.">
+            <Field label={t("Percentage of the original size")} htmlFor="rs-percent" hint={t("Both sides shrink by the same amount, so the proportions stay the same.")}>
               <div className="flex flex-wrap items-center gap-3">
-                <Slider id="rs-percent" label="Percentage of the original size" value={percent} min={1} max={100} onChange={setPercent} suffix="%" />
+                <Slider id="rs-percent" label={t("Percentage of the original size")} value={percent} min={1} max={100} onChange={setPercent} suffix="%" />
                 <div className="flex gap-1.5">
                   {[25, 50, 75].map((p) => (
                     <Button key={p} size="sm" variant={percent === p ? "primary" : "secondary"} onClick={() => setPercent(p)}>
@@ -118,14 +119,14 @@ function Form({ op }: { op: OperationReport }) {
           {mode === "fit" && (
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap gap-4">
-                <Field label="Maximum width (px)" htmlFor="rs-w">
+                <Field label={t("Maximum width (px)")} htmlFor="rs-w">
                   <TextInput id="rs-w" inputMode="numeric" value={width} onChange={(e) => setWidth(e.target.value)} aria-invalid={!wOk || undefined} className="max-w-36" />
                 </Field>
-                <Field label="Maximum height (px)" htmlFor="rs-h">
+                <Field label={t("Maximum height (px)")} htmlFor="rs-h">
                   <TextInput id="rs-h" inputMode="numeric" value={height} onChange={(e) => setHeight(e.target.value)} aria-invalid={!hOk || undefined} className="max-w-36" />
                 </Field>
               </div>
-              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Common sizes">
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("Common sizes")}>
                 {SIZE_PRESETS.map((p) => (
                   <Button
                     key={p.label}
@@ -140,17 +141,17 @@ function Form({ op }: { op: OperationReport }) {
                 ))}
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                {fitOk ? "Pictures keep their proportions and are never made bigger. Leave a box empty for no limit on that side." : `Give a width, a height or both, from 1 to ${MAX_PX} pixels.`}
+                {fitOk ? t("Pictures keep their proportions and are never made bigger. Leave a box empty for no limit on that side.") : t("Give a width, a height or both, from 1 to {max} pixels.", { max: MAX_PX })}
               </p>
             </div>
           )}
         </div>
       </Card>
 
-      <Card title="File size and format">
+      <Card title={t("File size and format")}>
         <div className="flex flex-col gap-5">
           <Segmented<Target>
-            label="Save as"
+            label={t("Save as")}
             value={target}
             onChange={setTarget}
             options={[
@@ -160,20 +161,20 @@ function Form({ op }: { op: OperationReport }) {
               { value: "png", label: "PNG" },
             ]}
           />
-          <Switch id="rs-aim" checked={aim} onChange={setAim} label="Aim for a file size" description="Lowers the quality only as much as needed to fit. Works for JPG and WebP." />
+          <Switch id="rs-aim" checked={aim} onChange={setAim} label={t("Aim for a file size")} description={t("Lowers the quality only as much as needed to fit. Works for JPG and WebP.")} />
           {aim && (
             <div className="flex flex-col gap-2">
-              <Field label="Largest file size (KB)" htmlFor="rs-kb" hint="1000 KB is 1 MB.">
+              <Field label={t("Largest file size (KB)")} htmlFor="rs-kb" hint={t("1000 KB is 1 MB.")}>
                 <TextInput id="rs-kb" inputMode="numeric" value={kb} onChange={(e) => setKb(e.target.value)} aria-invalid={!kbOk || undefined} className="max-w-36" />
               </Field>
-              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Common file sizes">
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("Common file sizes")}>
                 {KB_PRESETS.map((k) => (
                   <Button key={k} size="sm" variant={kbN === k ? "primary" : "secondary"} onClick={() => setKb(String(k))}>
                     {k >= 1000 ? `${k / 1000} MB` : `${k} KB`}
                   </Button>
                 ))}
               </div>
-              {pngOut && <p className="text-xs text-amber-800 dark:text-amber-300">PNG keeps every pixel, so it can't aim for a size. Choose JPG or WebP to make PNG pictures fit.</p>}
+              {pngOut && <p className="text-xs text-amber-800 dark:text-amber-300">{t("PNG keeps every pixel, so it can't aim for a size. Choose JPG or WebP to make PNG pictures fit.")}</p>}
             </div>
           )}
           {lossyOut && (
@@ -181,14 +182,14 @@ function Form({ op }: { op: OperationReport }) {
               <Slider id="rs-q" label={aim ? "Highest quality" : "Quality"} value={quality} min={1} max={100} onChange={setQuality} />
             </Field>
           )}
-          <Switch id="rs-meta" checked={keepInfo} onChange={setKeepInfo} label="Keep photo information" description="Camera details and location (EXIF). Off by default for privacy." />
+          <Switch id="rs-meta" checked={keepInfo} onChange={setKeepInfo} label={t("Keep photo information")} description={t("Camera details and location (EXIF). Off by default for privacy.")} />
         </div>
       </Card>
 
       <PreviewNotes preview={preview} />
       <ActionBar note={items.length ? (nothingToDo ? "Choose a smaller size, a file size or another format." : plural(items.length, "picture")) : "Add at least one picture."}>
         <Button variant="primary" onClick={run} disabled={!ready || !preview.ok || preview.loading}>
-          Make smaller
+          {t("Make smaller")}
         </Button>
       </ActionBar>
     </>

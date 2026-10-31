@@ -72,6 +72,25 @@ The Fly server also serves the web app itself, so `https://<name>.fly.dev` works
 The build writes Netlify's `_headers` (security policy that only allows calls to your Fly address) and `_redirects` (so links like `/convert` work).
 Tested with `npm run test:e2e:split` (site and engine on different origins, real browser): sessions, uploads, signed downloads, PDF page pictures.
 
+## CAPTCHA for new visitors (optional, recommended before sharing the site widely)
+
+New visitors can be asked to pass Cloudflare Turnstile (free) before they get a session. Most people never see anything;
+a checkbox appears only when Cloudflare is unsure. Visitors who already have a session aren't asked again for 24 hours.
+
+1. On https://dash.cloudflare.com (a free account is enough): **Turnstile → Add widget**. Name it OrangeFile, add your site
+   addresses as hostnames (for example `orangefile.netlify.app` and `fileorange-amine.fly.dev`), widget mode **Managed**.
+2. Copy the **Site key** and the **Secret key**, then in PowerShell:
+
+   ```powershell
+   fly secrets set FILE_API_TURNSTILE_SITE_KEY=<site key> FILE_API_TURNSTILE_SECRET=<secret key> -a <name>
+   ```
+
+   Fly restarts the server with the CAPTCHA on. Nothing to change on Netlify: the server tells the page which key to use,
+   and the page's security policy already allows Cloudflare's widget.
+3. To turn it off: `fly secrets unset FILE_API_TURNSTILE_SITE_KEY FILE_API_TURNSTILE_SECRET -a <name>`.
+
+If Cloudflare can't be reached, new visitors are refused rather than let in unchecked (people with a session carry on).
+
 ## Deploying from GitHub (optional)
 
 `.github/workflows/deploy-fly.yml` runs `fly deploy` by itself when server code changes on `main`, after the engine tests pass.
@@ -106,8 +125,7 @@ Changes to the web app alone don't redeploy Fly (Netlify handles those). To depl
   machine. After a restart or deploy, in-flight jobs are lost and the daily counters reset. Do not add a second machine yet: a visitor could land
   on one that does not know their job. (A shared store is Phase 2 in `ARCHITECTURE-WEB.md`.)
 * **Memory.** A big PDF render or an Office file can use a lot. If `fly logs` shows the machine being killed for memory, raise `memory` in `fly.toml`.
-* **Abuse.** There is no CAPTCHA yet. The per-session and per-IP limits stop casual abuse, not a determined one. Watch the first weeks of `fly logs`
-  and tell me what you see before promoting the site.
+* **Abuse.** The per-session and per-IP limits stop casual abuse; turn on the CAPTCHA (above) before promoting the site, and watch `fly logs`.
 * **Office files are the riskiest input.** They are parsed by LibreOffice in a throw-away profile with macros off, as a non-root user, inside
   Fly's per-machine virtual machine. That is reasonable for a beta; it is not the hardening a paid service would need (see the security checklist).
 * **Updating:** change the code, `fly deploy`. **Stopping everything:** `fly apps destroy <name>`.

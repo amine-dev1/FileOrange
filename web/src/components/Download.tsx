@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { t } from "../lib/i18n";
 import { api } from "../lib/api";
 import { API_BASE } from "../lib/base";
 import { isHosted } from "../lib/session";
@@ -31,7 +32,7 @@ export function DownloadAnchor({ job, index, className, children, label }: { job
       </a>
       {problem && (
         <span role="alert" className="basis-full text-xs text-red-700 dark:text-red-300">
-          {problem}
+          {t(problem)}
         </span>
       )}
     </>

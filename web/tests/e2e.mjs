@@ -29,6 +29,13 @@ const section = (n) => console.log("\n" + n);
 
 // ---------------------------------------------------------------- the engine and the web app
 const HOSTED = process.env.E2E_MODE === "hosted";
+let captchaChecks = 0;
+/** Instead of Cloudflare's script: a widget that answers straight away, as an invisible challenge does. */
+const FAKE_TURNSTILE = `window.turnstile = { render(el, o) { window.__captchaSiteKey = o.sitekey; setTimeout(() => o.callback("test-token"), 30); return "w1"; }, remove() {} };`;
+async function withFakeCaptcha(ctx) {
+  if (HOSTED) await ctx.route("https://challenges.cloudflare.com/**", (r) => r.fulfill({ contentType: "text/javascript", body: FAKE_TURNSTILE }));
+  return ctx;
+}
 const API_PORT = HOSTED ? 8795 : 8791, WEB_PORT = 5199;
 const TOKEN = randomBytes(32).toString("hex");
 const API = `http://127.0.0.1:${API_PORT}`;
@@ -40,6 +47,20 @@ if (HOSTED) {
   // The server also hosts the built web app, as it will when deployed. Each simulated visitor gets an address through a header.
   console.log("building the web app…");
   execFileSync("npx", ["vite", "build", "--outDir", join(work, "site"), "--emptyOutDir"], { cwd: web, stdio: "ignore", shell: process.platform === "win32" });
+  // A stand-in for Cloudflare's CAPTCHA checker: the fake widget below always answers "test-token".
+  const { createServer } = await import("node:http");
+  captchaChecks = 0;
+  createServer((req, res) => {
+    let body = "";
+    req.on("data", (c) => (body += c));
+    req.on("end", () => {
+      captchaChecks++;
+      const ok = new URLSearchParams(body).get("response") === "test-token";
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ success: ok }));
+    });
+  }).listen(8797, "127.0.0.1").unref();
+  Object.assign(env, { FILE_API_TURNSTILE_SITE_KEY: "test-site-key", FILE_API_TURNSTILE_SECRET: "test-secret", FILE_API_TURNSTILE_VERIFY_URL: "http://127.0.0.1:8797/siteverify" });
   Object.assign(env, { FILE_API_MODE: "hosted", FILE_API_SESSION_SECRET: randomBytes(32).toString("hex"), FILE_API_ALLOWED_HOSTS: "orangefile.test", FILE_API_STATIC_DIR: join(work, "site"), FILE_API_CLIENT_IP_HEADER: "x-test-ip", FILE_API_MAX_FILE_MB: String(MAX_FILE_MB) });
   delete env.FILE_API_TOKEN;
 }
@@ -60,7 +81,7 @@ await waitFor(`${BASE}/`);
 let engineToken = null;
 /** Talk to the engine directly, as a trusted checker (hosted: as a visitor of its own). */
 const eng = async (p, init = {}) => {
-  if (HOSTED && !engineToken) engineToken = (await (await fetch(`${API}/api/v1/session`, { method: "POST", headers: { "x-test-ip": "10.250.0.1" } })).json()).token;
+  if (HOSTED && !engineToken) engineToken = (await (await fetch(`${API}/api/v1/session`, { method: "POST", headers: { "x-test-ip": "10.250.0.1", "x-turnstile-token": "test-token" } })).json()).token;
   return fetch(`${API}/api/v1${p}`, { ...init, headers: { authorization: `Bearer ${HOSTED ? engineToken : TOKEN}`, ...(HOSTED ? { "x-test-ip": "10.250.0.1" } : {}), ...(init.headers || {}) } });
 };
 const py = (code, ...args) => execFileSync("python3", ["-I", "-c", code, ...args], { encoding: "utf8" });
@@ -104,10 +125,10 @@ const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePa
 const axeSrc = readFileSync(join(web, "node_modules/axe-core/axe.min.js"), "utf8");
 
 let visitorNo = 0;
-async function open(path = "/", { w = 1280, h = 860, dark = false, mobile = false, ip = null } = {}) {
+async function open(path = "/", { w = 1280, h = 860, dark = false, mobile = false, ip = null, locale = "en-US" } = {}) {
   // Hosted: every browser context is a different visitor on a different network address.
   const extraHTTPHeaders = HOSTED ? { "x-test-ip": ip ?? `10.20.${Math.floor(++visitorNo / 250)}.${(visitorNo % 250) + 1}` } : undefined;
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, acceptDownloads: true, colorScheme: dark ? "dark" : "light", isMobile: mobile, hasTouch: mobile, extraHTTPHeaders });
+  const ctx = await withFakeCaptcha(await browser.newContext({ viewport: { width: w, height: h }, acceptDownloads: true, colorScheme: dark ? "dark" : "light", isMobile: mobile, hasTouch: mobile, extraHTTPHeaders, locale }));
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
@@ -134,9 +155,11 @@ section("Landing page");
   const { page } = a;
   await page.getByRole("heading", { level: 1, name: /Turn the file you have into the one you need/ }).waitFor();
   ok(true, "the headline is there");
+  await page.waitForTimeout(800);
+  eq(await page.locator("#video").count(), 0, "no video section while there is no video file (never an empty player)");
   ok(await page.getByRole("figure").getByText(/tool:/).isVisible(), "the conversion animation runs");
   await page.getByRole("button", { name: "Show example: Folder to ZIP" }).click();
-  await page.getByRole("figure").getByText("Compress to ZIP").waitFor();
+  await page.getByRole("figure").getByText("Make a ZIP").waitFor();
   ok(true, "an example can be picked");
   await page.getByRole("link", { name: /Merge PDFs/ }).click();
   await page.getByRole("heading", { name: "Merge PDFs" }).waitFor();
@@ -160,13 +183,73 @@ section("Landing page");
   await m.close();
 
   // people who ask for less motion see everything at once, without animation
-  const ctx = await browser.newContext({ reducedMotion: "reduce", extraHTTPHeaders: HOSTED ? { "x-test-ip": "10.40.0.1" } : undefined });
+  const ctx = await withFakeCaptcha(await browser.newContext({ reducedMotion: "reduce", extraHTTPHeaders: HOSTED ? { "x-test-ip": "10.40.0.1" } : undefined }));
   const rp = await ctx.newPage();
   await rp.goto(BASE + "/");
   await rp.getByRole("heading", { level: 1 }).waitFor();
   const hidden = await rp.evaluate(() => [...document.querySelectorAll("[data-reveal], .lp-rise")].filter((e) => getComputedStyle(e).opacity !== "1").length);
   eq(hidden, 0, "with reduced motion nothing waits for an animation to be seen");
   await ctx.close();
+}
+
+section("French: chosen from the browser, switchable, and the tools work in French");
+{
+  const a = await open("/", { locale: "fr-FR" });
+  const { page } = a;
+  await page.getByRole("heading", { level: 1, name: /Votre fichier, dans le format qu'il vous faut/ }).waitFor();
+  ok(true, "a French browser gets the French landing page");
+  eq(await page.evaluate(() => document.documentElement.lang), "fr", "and the page says it is in French");
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Ouvrir l'appli" }).click();
+  await page.getByRole("heading", { name: /Bonjour|Bon après-midi|Bonsoir/ }).waitFor();
+  const nav = await page.getByRole("navigation", { name: "Principal" }).innerText();
+  ok(["Tableau de bord", "Convertir", "Compresser des images", "Outils PDF", "Créer un ZIP", "Tâches récentes", "À propos"].every((x) => nav.includes(x)), "the menu is in French: " + nav.replace(/\n/g, " | "));
+
+  // a whole job in French: options, notes from the server, the result, sizes in Ko
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Compresser des images" }).click();
+  await page.getByRole("heading", { name: "Compresser des images" }).waitFor();
+  await input(page).setInputFiles([red]);
+  await page.getByRole("button", { name: "50%" }).click();
+  await page.getByRole("button", { name: "Alléger", exact: true }).click();
+  await page.getByRole("heading", { name: "C'est prêt" }).waitFor({ timeout: 60_000 });
+  await page.getByText(/Redimensionnée de 200×100 à 100×50 px\./).waitFor();
+  ok(true, "the server's note is shown in French");
+  const dlText = (await page.getByRole("link", { name: /^Télécharger/ }).first().innerText()).replace(/\s+/g, " ");
+  ok(/Télécharger .+\(\d+(,\d)? (o|Ko)\)/.test(dlText), "sizes use French units: " + dlText);
+
+  // back to English with the switch, remembered
+  await page.getByRole("radio", { name: "English" }).click();
+  await page.getByRole("heading", { name: "Compress images" }).waitFor();
+  await page.getByRole("heading", { name: "All done" }).waitFor();
+  ok(true, "switching to English changes the page at once, and the finished job is still there");
+  await page.reload();
+  await page.getByRole("heading", { name: "Compress images" }).waitFor();
+  ok(true, "and the choice is remembered over the browser's language");
+  await page.getByRole("radio", { name: "Français" }).click();
+  await page.getByRole("heading", { name: "Compresser des images" }).waitFor();
+
+  // accessibility in French, on the landing page and a tool page
+  await page.evaluate(axeSrc);
+  const v1 = await page.evaluate(async () => (await window.axe.run(document, { runOnly: ["wcag2a", "wcag2aa", "wcag21aa"] })).violations.map((x) => `${x.id}: ${x.nodes[0].target}`));
+  ok(v1.length === 0, `French tool page passes axe: ${v1.join("; ")}`);
+  await page.goto(BASE + "/");
+  await page.getByRole("heading", { level: 1 }).waitFor();
+  for (let y = 0; y < 6000; y += 500) { await page.evaluate((y) => window.scrollTo(0, y), y); await page.waitForTimeout(60); }
+  await page.waitForTimeout(900);
+  await page.evaluate(axeSrc);
+  const v2 = await page.evaluate(async () => (await window.axe.run(document, { runOnly: ["wcag2a", "wcag2aa", "wcag21aa"] })).violations.map((x) => `${x.id}: ${x.nodes[0].target}`));
+  ok(v2.length === 0, `French landing page passes axe: ${v2.join("; ")}`);
+  ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "longer French text doesn't make the page scroll sideways");
+  eq(errorsOf(a), [], "no console errors in French");
+  await a.close();
+
+  // phone width in French: the longest labels still fit
+  const m = await open("/", { w: 390, h: 800, mobile: true, locale: "fr-FR" });
+  await m.page.getByRole("heading", { level: 1 }).waitFor();
+  ok(await m.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "French landing page fits a phone");
+  await m.page.goto(BASE + "/resize");
+  await m.page.waitForSelector("main");
+  ok(await m.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "French tool page fits a phone");
+  await m.close();
 }
 
 section("Dashboard follows what the engine reports");
@@ -176,14 +259,14 @@ section("Dashboard follows what the engine reports");
   await page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ }).waitFor();
   const caps = await (await eng("/capabilities")).json();
   const cards = await page.locator("#tools-heading + div a, #tools-heading + div [aria-disabled]").count();
-  eq(cards, 11, "one card per tool");
+  eq(cards, 14, "one card per tool");
   const open_ = await page.locator("#tools-heading + div a").count();
-  eq(open_, caps.operations.filter((o) => ["convert_image", "resize_image", "compress", "extract", "pdf_view", "pdf_annotate", "pdf_merge", "pdf_split", "images_to_pdf", "pdf_to_images", "office_to_pdf"].includes(o.id) && o.available).length, "cards that can be opened = available operations");
+  eq(open_, caps.operations.filter((o) => ["convert_image", "resize_image", "compress", "extract", "pdf_view", "pdf_annotate", "pdf_compress", "pdf_protect", "pdf_unlock", "pdf_merge", "pdf_split", "images_to_pdf", "pdf_to_images", "office_to_pdf"].includes(o.id) && o.available).length, "cards that can be opened = available operations");
   // Selecting files offers exactly the tools that fit them.
   await input(page).setInputFiles([red]);
   await page.getByRole("heading", { name: "Selected files" }).waitFor();
   const offered = await page.locator("main").getByRole("button").allInnerTexts();
-  ok(offered.includes("Convert") && offered.includes("Compress") && offered.includes("Images to PDF"), "tools for a picture: " + offered.join("|"));
+  ok(offered.includes("Convert") && offered.includes("Make a ZIP") && offered.includes("Compress images") && offered.includes("Images to PDF"), "tools for a picture: " + offered.join("|"));
   ok(!offered.includes("Open PDF") && !offered.includes("Merge PDFs"), "no PDF tools for a picture");
   eq(await page.locator("main").getByRole("button", { name: "Convert", exact: true }).isEnabled(), true, "Convert is enabled for a picture");
   await page.getByRole("button", { name: "Clear all" }).click();
@@ -237,7 +320,7 @@ section("Convert images");
 
 // ================================================================== compress + extract
 let zipFile;
-section("Resize and compress images");
+section("Compress images (resize, file size)");
 {
   const a = await open("/resize");
   const { page } = a;
@@ -267,6 +350,7 @@ section("Resize and compress images");
   eq(small.bytes.subarray(0, 3).toString("hex"), "ffd8ff", "saved as JPG");
   ok(small.bytes.length <= 40_000, `under 40 KB (${small.bytes.length} bytes)`);
   await page.getByText(/keeps it under 40 KB/).waitFor();
+  ok(/\d+% smaller/.test(await page.getByTestId("size-change").innerText()), "the result says how much smaller it got: " + (await page.getByTestId("size-change").innerText()));
   ok(true, "the result names the quality used");
 
   // nothing to do is not offered
@@ -289,7 +373,7 @@ section("Compress a folder, then extract it");
   await input(page, "Choose a folder").setInputFiles(tree);
   await page.getByText("2024/notes.txt").waitFor();
   await page.locator("#archive-name").fill("my archive");
-  await page.getByRole("button", { name: "Compress", exact: true }).click();
+  await page.getByRole("button", { name: "Make the ZIP", exact: true }).click();
   await done(page);
   const dl = await download(page);
   eq(dl.name, "my archive.zip", "named as typed");
@@ -605,6 +689,7 @@ if (hasPdfium) {
     await page.getByLabel("Your name").fill("Amine Test");
     await page.getByRole("switch", { name: "Remember it on this device" }).click();
     await page.getByRole("button", { name: "Use this signature" }).click();
+    await page.getByText("Click where the signature goes").waitFor();
     // place it on page 3, which is blue all over: the paper around the letters must stay blue
     await page.locator('[data-position="3"]').click();
     await page.waitForTimeout(300);
@@ -649,6 +734,7 @@ if (hasPdfium) {
     const corner = await page.getByTestId("signature-photo").evaluate((c) => [...c.getContext("2d").getImageData(2, 2, 1, 1).data]);
     eq(corner[3], 0, "the paper is transparent in the preview");
     await page.getByRole("button", { name: "Use this signature" }).click();
+    await page.getByText("Click where the signature goes").waitFor(); // the picture is ready to place
     const svg = page.locator('[data-testid="annotation-layer"]');
     const b = await svg.boundingBox();
     await page.mouse.click(b.x + b.width * 0.5, b.y + b.height * 0.8);
@@ -669,6 +755,69 @@ if (hasPdfium) {
   }
 }
 
+if (hasPdfium) {
+  section("Compress PDF, add a password, remove it");
+  {
+    // a "scan": one big photo-like picture on each of two pages, as phones and scanners make them
+    const scan = join(work, "scan.pdf");
+    py("import sys\nfrom PIL import Image\nw,h=1200,1680\nim=Image.new('RGB',(w,h))\npx=im.load()\nfor y in range(0,h,4):\n  for x in range(0,w,4):\n    n=((x*73856093)^(y*19349663))%40\n    c=(min(255,x*215//w+n),min(255,y*215//h+n),min(255,(x+y)*215//(w+h)+n))\n    for dy in range(4):\n      for dx in range(4): px[x+dx,y+dy]=c\nim.save(sys.argv[1],'PDF',resolution=240,save_all=True,append_images=[im.rotate(180)],quality=90)", scan);
+    ok(readFileSync(scan).length < 1024 * 1024, `the test scan fits the hosted 1 MB limit (${readFileSync(scan).length} bytes)`);
+    const scanSize = readFileSync(scan).length;
+    const a = await open("/pdf/compress");
+    const { page } = a;
+    await input(page).setInputFiles([scan]);
+    await radio(page, "Strong").click();
+    await page.getByRole("button", { name: "Compress", exact: true }).click();
+    await done(page);
+    const small = await download(page);
+    eq(small.name, "scan (compressed).pdf", "named after the original");
+    ok(small.bytes.length < scanSize / 2, `much smaller: ${scanSize} → ${small.bytes.length} bytes`);
+    eq((await pdfInfo(small.bytes)).page_count, 2, "both pages are still there");
+    ok(/\d+% smaller/.test(await page.getByTestId("size-change").innerText()), "the result says how much smaller");
+    eq(errorsOf(a), [], "no console errors");
+    await a.close();
+
+    // add a password, then check it really needs it
+    const b = await open("/pdf/protect");
+    await input(b.page).setInputFiles([pdfFix("three-pages.pdf")]);
+    await b.page.locator("#protect-password").fill("Tr0ub4dor & 3");
+    await b.page.locator("#protect-again").fill("Tr0ub4dor & 4");
+    await b.page.getByText("The two passwords are different.").waitFor();
+    ok(await b.page.getByRole("button", { name: "Protect", exact: true }).isDisabled(), "mismatched passwords can't be used");
+    await b.page.locator("#protect-again").fill("Tr0ub4dor & 3");
+    await b.page.getByRole("switch", { name: "Allow printing" }).click();
+    await b.page.getByRole("button", { name: "Protect", exact: true }).click();
+    await done(b.page);
+    const locked = await download(b.page);
+    eq(locked.name, "three-pages (protected).pdf", "named after the original");
+    const form = new FormData();
+    form.append("file", new Blob([locked.bytes]), "x.pdf");
+    const noPw = await eng("/pdf/documents", { method: "POST", body: form });
+    ok(noPw.status >= 400, `it won't open without the password (${noPw.status})`);
+    eq((await withPdf(locked.bytes, (d) => d.info, "Tr0ub4dor & 3")).page_count, 3, "and opens with it, all pages there");
+    await b.close();
+
+    // remove it again
+    const lockedFile = join(work, "locked.pdf");
+    writeFileSync(lockedFile, locked.bytes);
+    const c = await open("/pdf/unlock");
+    await input(c.page).setInputFiles([lockedFile]);
+    await c.page.locator("#unlock-password").fill("wrong");
+    await c.page.getByRole("button", { name: "Remove password", exact: true }).click();
+    await c.page.getByRole("heading", { name: /That didn't work|Finished with some problems/ }).waitFor({ timeout: 30_000 });
+    await c.page.getByText("The password is incorrect.").first().waitFor();
+    ok(true, "a wrong password is explained");
+    await c.page.getByRole("button", { name: "Try again" }).click();
+    await c.page.locator("#unlock-password").fill("Tr0ub4dor & 3");
+    await c.page.getByRole("button", { name: "Remove password", exact: true }).click();
+    await done(c.page);
+    const open_ = await download(c.page);
+    eq((await pdfInfo(open_.bytes)).page_count, 3, "the unlocked copy opens without a password");
+    eq(errorsOf(c), [], "no console errors");
+    await c.close();
+  }
+}
+
 // ================================================================== jobs list, theme, layout, accessibility
 if (HOSTED) {
   section("Hosted: sessions, limits, the usage meter, signed downloads");
@@ -677,6 +826,11 @@ if (HOSTED) {
     const { page } = a;
     await page.getByText("Up to 1 MB per file.").waitFor();
     ok(true, "the dropzone says the per-file limit");
+    eq(await page.evaluate(() => window.__captchaSiteKey), "test-site-key", "a new visitor passed the CAPTCHA, with the key the server gave");
+    ok(captchaChecks > 0, "and the server checked the answer");
+    const bare = await fetch(`${API}/api/v1/session`, { method: "POST", headers: { "x-test-ip": "10.31.0.1" } });
+    eq(bare.status, 403, "without an answer there is no new session");
+    eq((await bare.json()).captcha?.site_key, "test-site-key", "the server says which challenge to show");
     const stored = await page.evaluate(() => localStorage.getItem("orangefile.web.session.v1"));
     ok(/^of1\.[0-9a-f]{32}\.\d+\.[0-9a-f]{64}$/.test(stored ?? ""), "a signed session is kept in the browser");
     const html = await (await fetch(BASE + "/")).text();
@@ -728,7 +882,8 @@ if (HOSTED) {
     await v1.page.getByRole("button", { name: "Convert", exact: true }).click();
     await done(v1.page);
     const jobId = await v1.page.evaluate(() => JSON.parse(localStorage.getItem("orangefile.web.jobs.v1") ?? "[]")[0]?.serverId ?? null);
-    const v2 = await open("/app");
+    const v2 = await open("/convert");
+    await v2.page.getByText("Up to 1 MB per file.").waitFor(); // the session exists once the limits are shown
     const token2 = await v2.page.evaluate(() => localStorage.getItem("orangefile.web.session.v1"));
     if (jobId) {
       const r = await fetch(`${API}/api/v1/jobs/${jobId}`, { headers: { authorization: `Bearer ${token2}`, "x-test-ip": "10.99.0.2" } });
@@ -761,11 +916,28 @@ section("Recent jobs, theme and phone layout");
   ok(await page.evaluate(() => document.documentElement.classList.contains("dark")), "and is remembered");
   await a.close();
 
+  // phones: pictures can come straight from the camera; computers don't see the button
+  {
+    const ph = await open("/pdf/images-to-pdf", { w: 390, h: 800, mobile: true });
+    const cam = ph.page.getByRole("button", { name: "Take a photo", exact: true });
+    await cam.waitFor({ timeout: 15_000 }).catch(() => undefined);
+    ok(await cam.isVisible(), "a phone is offered the camera");
+    eq(await ph.page.getByLabel("Take a photo with the camera").getAttribute("capture"), "environment", "which opens the back camera");
+    await ph.page.getByLabel("Take a photo with the camera").setInputFiles([red]);
+    await ph.page.getByText(/^photo-\d{6}-[a-z0-9]{3}\.png$/).waitFor();
+    await ph.page.getByLabel("Take a photo with the camera").setInputFiles([blue]);
+    eq(await ph.page.getByText(/^photo-\d{6}-[a-z0-9]{3}\.png$/).count(), 2, "two shots, two names, both kept");
+    await ph.close();
+    const pc = await open("/pdf/images-to-pdf");
+    await pc.page.getByRole("button", { name: "Choose files" }).first().waitFor();
+    ok(!(await pc.page.getByRole("button", { name: "Take a photo", exact: true }).isVisible()), "a computer isn't");
+    await pc.close();
+  }
   const m = await open("/app", { w: 390, h: 800, mobile: true });
   ok(await m.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "no sideways scrolling on a phone");
   await m.page.getByRole("button", { name: "Open menu" }).click();
-  await m.page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Compress" }).click();
-  await m.page.getByRole("heading", { name: "Compress to ZIP" }).waitFor();
+  await m.page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Make a ZIP" }).click();
+  await m.page.getByRole("heading", { name: "Make a ZIP" }).waitFor();
   ok(await m.page.getByRole("button", { name: "Open menu" }).isVisible(), "the menu closes after choosing a page");
   for (const p of ["/convert", "/resize", "/pdf", "/pdf/editor", "/jobs", "/about"]) {
     await m.page.goto(BASE + p);
@@ -795,7 +967,7 @@ for (const dark of [false, true]) {
   await input(page).setInputFiles([red, pdfFix("three-pages.pdf")]);
   await page.getByRole("heading", { name: "Selected files" }).waitFor();
   await check("dashboard with files");
-  for (const [p, n] of [["/convert", "convert"], ["/resize", "resize"], ["/compress", "compress"], ["/extract", "extract"], ["/pdf", "PDF hub"], ["/pdf/merge", "merge"], ["/pdf/split", "split"], ["/pdf/images-to-pdf", "images to PDF"], ["/pdf/to-images", "PDF to images"], ["/pdf/documents-to-pdf", "documents to PDF"], ["/jobs", "jobs"], ["/about", "about"]]) {
+  for (const [p, n] of [["/convert", "convert"], ["/resize", "resize"], ["/compress", "compress"], ["/extract", "extract"], ["/pdf", "PDF hub"], ["/pdf/merge", "merge"], ["/pdf/split", "split"], ["/pdf/images-to-pdf", "images to PDF"], ["/pdf/to-images", "PDF to images"], ["/pdf/documents-to-pdf", "documents to PDF"], ["/pdf/compress", "compress PDF"], ["/pdf/protect", "protect PDF"], ["/pdf/unlock", "unlock PDF"], ["/jobs", "jobs"], ["/about", "about"]]) {
     await go(p);
     await page.waitForTimeout(200);
     await check(n);

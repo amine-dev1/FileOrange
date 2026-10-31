@@ -1,4 +1,5 @@
 import type { OptionSpec } from "../lib/types";
+import { t } from "../lib/i18n";
 import { Field, Segmented, Slider, Switch } from "./ui";
 
 /** Renders one backend-described option with the right control. */
@@ -25,7 +26,7 @@ export function OptionField({ spec, value, onChange }: { spec: OptionSpec; value
       return (
         <Field label={spec.label} htmlFor={id} hint={spec.help ?? undefined}>
           <div className="flex items-center gap-3">
-            <input id={id} type="color" aria-label={`${spec.label} (colour picker)`} value={String(value)} onChange={(e) => onChange(e.target.value.toUpperCase())} className="size-10 cursor-pointer rounded-lg border border-slate-300 bg-transparent p-1 dark:border-slate-700" />
+            <input id={id} type="color" aria-label={t("{label} (colour picker)", { label: t(spec.label) })} value={String(value)} onChange={(e) => onChange(e.target.value.toUpperCase())} className="size-10 cursor-pointer rounded-lg border border-slate-300 bg-transparent p-1 dark:border-slate-700" />
             <code className="text-sm text-slate-600 dark:text-slate-400">{String(value).toUpperCase()}</code>
           </div>
         </Field>

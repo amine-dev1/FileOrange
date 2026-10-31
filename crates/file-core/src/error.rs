@@ -33,6 +33,9 @@ pub enum Error {
     /// LibreOffice couldn't be started, took too long or produced nothing.
     #[error("Office conversion failed: {0}")]
     OfficeConversion(String),
+    /// qpdf or the PDF rewriter couldn't process a file.
+    #[error("PDF tool failed: {0}")]
+    PdfTool(String),
     #[error("unsupported: {0}")]
     Unsupported(String),
     #[error("unsupported file type: {0}")]
@@ -124,6 +127,7 @@ impl Error {
             Error::PageOutOfRange { .. } => "page_out_of_range",
             Error::PdfWorker(_) => "pdf_worker_failed",
             Error::OfficeConversion(_) => "office_conversion_failed",
+            Error::PdfTool(_) => "pdf_tool_failed",
             Error::Unsupported(_) => "unsupported",
             Error::UnsupportedFormat(_) => "unsupported_format",
             Error::UnsupportedConversion { .. } => "unsupported_conversion",
@@ -172,6 +176,7 @@ impl Error {
                 "The PDF engine stopped while reading this file. It may be damaged, or too complex to open safely.".into()
             }
             Error::OfficeConversion(m) => format!("This document couldn't be converted: {m}."),
+            Error::PdfTool(m) => format!("This PDF couldn't be processed: {m}."),
             Error::Unsupported(m) => format!("This isn't supported yet: {m}."),
             Error::UnsupportedFormat(name) => format!("“{name}” isn't a file type this operation can use."),
             Error::UnsupportedConversion { from, to } => format!("Converting {} to {} isn't supported.", from.to_uppercase(), to.to_uppercase()),

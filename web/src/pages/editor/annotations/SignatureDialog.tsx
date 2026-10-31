@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Callout, Dialog, Field, Segmented, Switch, TextInput } from "../../../components/ui";
 import { contentBox, fitFontSize, whiteToTransparent } from "./signatureImage";
 import { SIGNATURE_COLOR, type PendingSignature } from "./useAnnotations";
+import { t } from "../../../lib/i18n";
 
 const W = 440;
 const H = 170;
@@ -84,7 +85,7 @@ function SavedPreview({ saved }: { saved: Saved }) {
     g.clearRect(0, 0, 240, 72);
     drawStrokes(g, strokes.map((s) => s.map(([x, y]) => [8 + x * w, 8 + y * (w / aspect)] as [number, number])), 1.6);
   }, [saved]);
-  return saved.kind === "png" ? <img src={saved.dataUrl} alt="Your saved signature" className="h-16 max-w-60 object-contain" /> : <canvas ref={ref} width={240} height={72} role="img" aria-label="Your saved signature" className="h-16 w-auto" />;
+  return saved.kind === "png" ? <img src={saved.dataUrl} alt={t("Your saved signature")} className="h-16 max-w-60 object-contain" /> : <canvas ref={ref} width={240} height={72} role="img" aria-label={t("Your saved signature")} className="h-16 w-auto" />;
 }
 
 /**
@@ -218,8 +219,8 @@ export function SignatureDialog({ onUse, onClose }: { onUse: (s: SignatureResult
 
   return (
     <Dialog
-      title="Add your signature"
-      description="Draw it, type your name, or use a photo of your signature."
+      title={t("Add your signature")}
+      description={t("Draw it, type your name, or use a photo of your signature.")}
       onClose={onClose}
       footer={
         <>
@@ -233,14 +234,14 @@ export function SignatureDialog({ onUse, onClose }: { onUse: (s: SignatureResult
                 redraw();
               }}
             >
-              Clear
+              {t("Clear")}
             </Button>
           )}
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button variant="primary" onClick={() => void finish()} disabled={!ready}>
-            Use this signature
+            {t("Use this signature")}
           </Button>
         </>
       }
@@ -253,7 +254,7 @@ export function SignatureDialog({ onUse, onClose }: { onUse: (s: SignatureResult
             </div>
             <div className="flex flex-1 flex-wrap justify-end gap-2">
               <Button size="sm" variant="primary" onClick={() => void pickSaved()}>
-                Use my saved signature
+                {t("Use my saved signature")}
               </Button>
               <Button
                 size="sm"
@@ -263,14 +264,14 @@ export function SignatureDialog({ onUse, onClose }: { onUse: (s: SignatureResult
                   setSaved(null);
                 }}
               >
-                Forget it
+                {t("Forget it")}
               </Button>
             </div>
           </div>
         )}
 
         <Segmented<Mode>
-          label="How"
+          label={t("How")}
           value={mode}
           onChange={(m) => {
             setProblem(null);
@@ -289,7 +290,7 @@ export function SignatureDialog({ onUse, onClose }: { onUse: (s: SignatureResult
             width={W}
             height={H}
             role="img"
-            aria-label="Signature pad: draw here with the mouse, a pen or your finger"
+            aria-label={t("Signature pad: draw here with the mouse, a pen or your finger")}
             data-testid="signature-pad"
             className="aspect-[440/170] w-full max-w-[440px] cursor-crosshair touch-none rounded-xl border-2 border-dashed border-slate-300 bg-white dark:border-slate-600"
             onPointerDown={(e) => {
@@ -312,32 +313,32 @@ export function SignatureDialog({ onUse, onClose }: { onUse: (s: SignatureResult
 
         {mode === "type" && (
           <div className="flex flex-col gap-3">
-            <Field label="Your name" htmlFor="sig-name">
+            <Field label={t("Your name")} htmlFor="sig-name">
               <TextInput id="sig-name" value={name} maxLength={60} autoComplete="name" onChange={(e) => setName(e.target.value)} />
             </Field>
-            <Segmented<FontKey> label="Style" value={font} onChange={setFont} options={FONTS.map((f) => ({ value: f.value, label: f.label }))} />
-            <canvas ref={typed} width={W * 2} height={H * 2} role="img" aria-label={name.trim() ? `Your typed signature: ${name.trim()}` : "Your typed signature appears here"} data-testid="signature-typed" className="aspect-[440/170] w-full max-w-[440px] rounded-xl border-2 border-dashed border-slate-300 bg-white dark:border-slate-600" />
+            <Segmented<FontKey> label={t("Style")} value={font} onChange={setFont} options={FONTS.map((f) => ({ value: f.value, label: f.label }))} />
+            <canvas ref={typed} width={W * 2} height={H * 2} role="img" aria-label={name.trim() ? t("Your typed signature: {name}", { name: name.trim() }) : t("Your typed signature appears here")} data-testid="signature-typed" className="aspect-[440/170] w-full max-w-[440px] rounded-xl border-2 border-dashed border-slate-300 bg-white dark:border-slate-600" />
           </div>
         )}
 
         {mode === "upload" && (
           <div className="flex flex-col gap-3">
             <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
-              Photo or scan of your signature
-              <input type="file" accept="image/png,image/jpeg,image/webp" aria-label="Choose a photo of your signature" onChange={(e) => pickPhoto(e.target.files?.[0])} className="text-sm font-normal file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-medium file:text-brand-800 dark:file:bg-brand-900/30 dark:file:text-brand-200" />
+              {t("Photo or scan of your signature")}
+              <input type="file" accept="image/png,image/jpeg,image/webp" aria-label={t("Choose a photo of your signature")} onChange={(e) => pickPhoto(e.target.files?.[0])} className="text-sm font-normal file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-medium file:text-brand-800 dark:file:bg-brand-900/30 dark:file:text-brand-200" />
             </label>
-            <Switch id="sig-clean" checked={cleanBackground} onChange={setCleanBackground} label="Remove the paper background" description="Makes the white paper transparent, so only the ink shows on the page." />
-            <canvas ref={shown} width={W} height={H} role="img" aria-label={photo ? "Your signature from the photo" : "The photo appears here"} data-testid="signature-photo" className="aspect-[440/170] w-full max-w-[440px] rounded-xl border-2 border-dashed border-slate-300 bg-[repeating-conic-gradient(#f1f5f9_0_25%,#fff_0_50%)] bg-[length:16px_16px] dark:border-slate-600" />
+            <Switch id="sig-clean" checked={cleanBackground} onChange={setCleanBackground} label={t("Remove the paper background")} description={t("Makes the white paper transparent, so only the ink shows on the page.")} />
+            <canvas ref={shown} width={W} height={H} role="img" aria-label={t(photo ? "Your signature from the photo" : "The photo appears here")} data-testid="signature-photo" className="aspect-[440/170] w-full max-w-[440px] rounded-xl border-2 border-dashed border-slate-300 bg-[repeating-conic-gradient(#f1f5f9_0_25%,#fff_0_50%)] bg-[length:16px_16px] dark:border-slate-600" />
           </div>
         )}
 
-        <Switch id="sig-remember" checked={remember} onChange={setRemember} label="Remember it on this device" description="Kept only in this browser, so you can use it again next time. Never sent anywhere until you save a PDF with it." />
+        <Switch id="sig-remember" checked={remember} onChange={setRemember} label={t("Remember it on this device")} description={t("Kept only in this browser, so you can use it again next time. Never sent anywhere until you save a PDF with it.")} />
         {problem && (
           <p role="alert" className="text-sm text-red-700 dark:text-red-300">
-            {problem}
+            {t(problem)}
           </p>
         )}
-        <Callout tone="warning">{WARNING}</Callout>
+        <Callout tone="warning">{t(WARNING)}</Callout>
       </div>
     </Dialog>
   );

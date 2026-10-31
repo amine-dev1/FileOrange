@@ -4,47 +4,54 @@ import { isActive, useJobs, type JobRecord } from "../state/JobsProvider";
 import { DownloadAnchor } from "./Download";
 import { FileIcon } from "./FileIcon";
 import { Badge, IconButton, ProgressBar } from "./ui";
+import { plural, t } from "../lib/i18n";
 
 export function operationLabel(j: Pick<JobRecord, "tool" | "detail">): string {
-  const d = j.detail ? ` (${j.detail})` : "";
+  const d = j.detail ? ` (${t(j.detail)})` : "";
   switch (j.tool) {
     case "compress":
-      return "Compress";
+      return t("Make a ZIP");
     case "extract":
-      return "Extract";
+      return t("Extract");
     case "convert":
-      return `Convert${d}`;
+      return t("Convert") + d;
     case "resize":
-      return `Resize${d}`;
+      return t("Compress images") + d;
     case "pdf-merge":
-      return "Merge PDFs";
+      return t("Merge PDFs");
     case "pdf-split":
-      return "Split PDF";
+      return t("Split PDF");
     case "pdf-pages":
-      return `Edit PDF${d}`;
+      return t("Edit PDF") + d;
     case "images-to-pdf":
-      return "Images to PDF";
+      return t("Images to PDF");
     case "pdf-to-images":
-      return `PDF to images${d}`;
+      return t("PDF to images") + d;
     case "office-to-pdf":
-      return "Document to PDF";
+      return t("Document to PDF");
+    case "pdf-compress":
+      return t("Compress PDF") + d;
+    case "pdf-protect":
+      return t("Add a password");
+    case "pdf-unlock":
+      return t("Remove a password");
   }
 }
 
 function StatusBadge({ job }: { job: JobRecord }) {
   switch (job.phase) {
     case "uploading":
-      return <Badge tone="brand">Sending</Badge>;
+      return <Badge tone="brand">{t("Sending")}</Badge>;
     case "processing":
-      return <Badge tone="brand">Working</Badge>;
+      return <Badge tone="brand">{t("Working")}</Badge>;
     case "completed":
-      return <Badge tone="green">Done</Badge>;
+      return <Badge tone="green">{t("Done")}</Badge>;
     case "failed":
-      return <Badge tone="red">Failed</Badge>;
+      return <Badge tone="red">{t("Failed")}</Badge>;
     case "cancelled":
-      return <Badge>Cancelled</Badge>;
+      return <Badge>{t("Cancelled")}</Badge>;
     case "expired":
-      return <Badge tone="amber">Expired</Badge>;
+      return <Badge tone="amber">{t("Expired")}</Badge>;
   }
 }
 
@@ -67,25 +74,25 @@ export function JobList({ jobs, caption }: { jobs: JobRecord[]; caption: string 
               <p className="truncate text-xs text-slate-600 dark:text-slate-400">
                 {operationLabel(job)} · {formatBytes(job.inputBytes)} · {formatJobDate(job.createdAt)}
               </p>
-              {job.phase === "failed" && job.error && <p className="truncate text-xs text-red-700 dark:text-red-300">{job.error.message}</p>}
-              {job.phase === "completed" && failed > 0 && <p className="text-xs text-amber-700 dark:text-amber-300">{failed} file(s) couldn't be processed</p>}
+              {job.phase === "failed" && job.error && <p className="truncate text-xs text-red-700 dark:text-red-300">{t(job.error.message)}</p>}
+              {job.phase === "completed" && failed > 0 && <p className="text-xs text-amber-700 dark:text-amber-300">{t("{count} couldn't be processed", { count: plural(failed, "file") })}</p>}
             </div>
             <div className="flex w-40 flex-col items-start gap-1">
               <StatusBadge job={job} />
-              {isActive(job) && <ProgressBar percent={job.percent} label={`${job.title} progress`} indeterminate={job.phase === "processing" && job.percent === 0} />}
+              {isActive(job) && <ProgressBar percent={job.percent} label={t("{name} progress", { name: job.title })} indeterminate={job.phase === "processing" && job.percent === 0} />}
             </div>
             <div className="flex items-center gap-1">
               {canDownload && job.serverId && (
-                <DownloadAnchor job={job.serverId} index={single ? files[0].index : undefined} label={`Download result of ${job.title}`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-                  <Download className="size-4" aria-hidden /> Download
+                <DownloadAnchor job={job.serverId} index={single ? files[0].index : undefined} label={t("Download result of {name}", { name: job.title })} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                  <Download className="size-4" aria-hidden /> {t("Download")}
                 </DownloadAnchor>
               )}
               {isActive(job) ? (
-                <IconButton label={`Cancel ${job.title}`} onClick={() => cancel(job.id)}>
+                <IconButton label={t("Cancel {name}", { name: job.title })} onClick={() => cancel(job.id)}>
                   <XCircle className="size-4" aria-hidden />
                 </IconButton>
               ) : (
-                <IconButton label={`Remove ${job.title} from the list`} onClick={() => remove(job.id)}>
+                <IconButton label={t("Remove {name} from the list", { name: job.title })} onClick={() => remove(job.id)}>
                   <Trash2 className="size-4" aria-hidden />
                 </IconButton>
               )}

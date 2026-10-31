@@ -3,6 +3,7 @@ import { extensionOf, formatBytes, plural } from "../lib/format";
 import type { FileItem } from "../lib/files";
 import { FileIcon } from "./FileIcon";
 import { Button, IconButton, cx } from "./ui";
+import { t } from "../lib/i18n";
 
 export interface FileRow {
   item: FileItem;
@@ -25,14 +26,14 @@ export function FileList({ rows, onRemove, onClear, ordered, noun = "file", labe
   const total = rows.reduce((n, r) => n + r.item.size, 0);
   const List = ordered ? "ol" : "ul";
   return (
-    <section aria-label={label} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+    <section aria-label={t(label)} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
       <div className="flex items-center justify-between gap-3 bg-slate-50 px-4 py-2 text-sm text-slate-600 dark:bg-slate-800/50 dark:text-slate-400">
         <span>
           <strong className="font-semibold text-slate-900 dark:text-slate-100">{plural(rows.length, noun)}</strong> · {formatBytes(total)}
-          {ordered && <> · {ordered.note}</>}
+          {ordered && <> · {t(ordered.note)}</>}
         </span>
         <Button variant="ghost" size="sm" onClick={onClear} disabled={disabled}>
-          Clear all
+          {t("Clear all")}
         </Button>
       </div>
       <List className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -48,19 +49,19 @@ export function FileList({ rows, onRemove, onClear, ordered, noun = "file", labe
               <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100" title={item.relPath ?? item.name}>
                 {item.relPath ?? item.name}
               </p>
-              <p className={cx("truncate text-xs", problem ? "text-red-700 dark:text-red-300" : "text-slate-600 dark:text-slate-400")}>{problem ?? `${extensionOf(item.name).toUpperCase() || "FILE"} · ${formatBytes(item.size)}`}</p>
+              <p className={cx("truncate text-xs", problem ? "text-red-700 dark:text-red-300" : "text-slate-600 dark:text-slate-400")}>{problem ? t(problem) : `${extensionOf(item.name).toUpperCase() || t("FILE")} · ${formatBytes(item.size)}`}</p>
             </div>
             {ordered && (
               <>
-                <IconButton label={`Move ${item.name} up`} disabled={disabled || i === 0} onClick={() => ordered.onMove(item.id, -1)}>
+                <IconButton label={t("Move {name} up", { name: item.name })} disabled={disabled || i === 0} onClick={() => ordered.onMove(item.id, -1)}>
                   <ArrowUp className="size-4" aria-hidden />
                 </IconButton>
-                <IconButton label={`Move ${item.name} down`} disabled={disabled || i === rows.length - 1} onClick={() => ordered.onMove(item.id, 1)}>
+                <IconButton label={t("Move {name} down", { name: item.name })} disabled={disabled || i === rows.length - 1} onClick={() => ordered.onMove(item.id, 1)}>
                   <ArrowDown className="size-4" aria-hidden />
                 </IconButton>
               </>
             )}
-            <IconButton label={`Remove ${item.name}`} disabled={disabled} onClick={() => onRemove(item.id)}>
+            <IconButton label={t("Remove {name}", { name: item.name })} disabled={disabled} onClick={() => onRemove(item.id)}>
               <X className="size-4" aria-hidden />
             </IconButton>
           </li>

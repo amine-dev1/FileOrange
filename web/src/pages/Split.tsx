@@ -10,12 +10,13 @@ import type { OperationReport } from "../lib/types";
 import { useCapabilities } from "../state/CapabilitiesProvider";
 import { useJobs } from "../state/JobsProvider";
 import { useSelection } from "../state/SelectionProvider";
+import { t } from "../lib/i18n";
 
 type Mode = "every" | "ranges";
 
 export function SplitPage() {
   return (
-    <ToolShell tool="pdf-split" opId="pdf_split" title="Split a PDF" subtitle="Cut one PDF into several. Your original is never changed.">
+    <ToolShell tool="pdf-split" opId="pdf_split" title={t("Split a PDF")} subtitle={t("Cut one PDF into several. Your original is never changed.")}>
       {(op) => <SplitForm op={op} />}
     </ToolShell>
   );
@@ -42,11 +43,11 @@ function SplitForm({ op }: { op: OperationReport }) {
 
   return (
     <>
-      <FilesCard title="PDF to split" rows={rows} accept={extensionsFor(caps!, ["pdf"])} hint="Choose one PDF" noun="PDF" multiple={false} />
-      <Card title="Options">
+      <FilesCard title={t("PDF to split")} rows={rows} accept={extensionsFor(caps!, ["pdf"])} hint={t("Choose one PDF")} noun="PDF" multiple={false} />
+      <Card title={t("Options")}>
         <div className="flex flex-col gap-5">
           <Segmented<Mode>
-            label="Split by"
+            label={t("Split by")}
             value={mode}
             onChange={setMode}
             options={[
@@ -55,21 +56,21 @@ function SplitForm({ op }: { op: OperationReport }) {
             ]}
           />
           {mode === "every" ? (
-            <Field label="Pages in each new PDF" htmlFor="split-every" hint="1 makes one PDF per page. The last one holds whatever is left.">
+            <Field label={t("Pages in each new PDF")} htmlFor="split-every" hint={t("1 makes one PDF per page. The last one holds whatever is left.")}>
               <TextInput id="split-every" type="number" min={1} max={50000} inputMode="numeric" value={every} onChange={(e) => setEvery(e.target.value)} aria-invalid={!inputOk || undefined} className="max-w-40" />
             </Field>
           ) : (
-            <Field label="Page ranges" htmlFor="split-ranges" hint="One new PDF for each range, for example 1-3, 4, 7-. A dash at the end means “to the last page”.">
+            <Field label={t("Page ranges")} htmlFor="split-ranges" hint={t("One new PDF for each range, for example 1-3, 4, 7-. A dash at the end means “to the last page”.")}>
               <TextInput id="split-ranges" value={ranges} onChange={(e) => setRanges(e.target.value)} placeholder="1-3, 4, 7-" spellCheck={false} />
             </Field>
           )}
-          <PasswordField id="split-password" value={password} onChange={setPassword} hint="Used for this job only. The new PDFs are not protected." />
+          <PasswordField id="split-password" value={password} onChange={setPassword} hint={t("Used for this job only. The new PDFs are not protected.")} />
         </div>
       </Card>
       <PreviewNotes preview={preview} />
       <ActionBar note={items.length === 0 ? "Choose a PDF." : !inputOk ? (mode === "every" ? "Enter how many pages each file should have." : "Enter the page ranges.") : "The new PDFs come as a ZIP."}>
         <Button variant="primary" disabled={!ready || !preview.ok || preview.loading} onClick={() => start({ tool: "pdf-split", operation: "pdf_split", options, files: toUploads(items), title: items[0].name, detail: mode === "every" ? `every ${n}` : "ranges" })}>
-          Split
+          {t("Split")}
         </Button>
       </ActionBar>
     </>

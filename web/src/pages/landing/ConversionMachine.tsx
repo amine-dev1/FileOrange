@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { t } from "../../lib/i18n";
 
 /** Real conversions the site does, shown going through the machine one after another. */
 const STEPS = [
@@ -6,7 +7,7 @@ const STEPS = [
   { from: ["holiday.png"], to: "holiday.webp", tool: "Convert images", label: "PNG to WEBP" },
   { from: ["part-1.pdf", "part-2.pdf", "part-3.pdf"], to: "merged.pdf", tool: "Merge PDFs", label: "Three PDFs into one" },
   { from: ["scan.pdf"], to: "scan-1.jpg", tool: "PDF to pictures", label: "PDF to JPG" },
-  { from: ["photos/"], to: "photos.zip", tool: "Compress to ZIP", label: "Folder to ZIP" },
+  { from: ["photos/"], to: "photos.zip", tool: "Make a ZIP", label: "Folder to ZIP" },
 ] as const;
 const CYCLE_MS = 4200;
 
@@ -31,7 +32,7 @@ function FileCard({ name, done = false, className = "", style }: { name: string;
       <span className="mt-3 block truncate font-mono text-xs font-semibold text-aubergine sm:text-[0.8rem]">{name}</span>
       {done && (
         <span className="lp-stamp absolute -right-4 -bottom-3 rounded-md border-2 border-aubergine bg-mint px-2 py-0.5 font-mono text-[0.7rem] font-bold tracking-widest text-aubergine uppercase">
-          Done
+          {t("Done")}
         </span>
       )}
     </div>
@@ -88,17 +89,17 @@ export function ConversionMachine() {
 
         <figcaption className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t-2 border-dashed border-aubergine/25 pt-4">
           <span className="font-mono text-xs font-semibold text-aubergine">
-            <span className="text-aubergine-muted">tool:</span> {s.tool}
+            <span className="text-aubergine-muted">{t("tool:")}</span> {t(s.tool)}
           </span>
           <span className="sr-only">
-            Animation showing what OrangeFile does, for example {s.from.join(", ")} becoming {s.to}.
+            {t("Animation showing what OrangeFile does, for example {from} becoming {to}.", { from: s.from.join(", "), to: s.to })}
           </span>
-          <span className="flex gap-0.5" role="group" aria-label="Examples">
+          <span className="flex gap-0.5" role="group" aria-label={t("Examples")}>
             {STEPS.map((x, n) => (
               <button
                 key={x.label}
                 type="button"
-                aria-label={`Show example: ${x.label}`}
+                aria-label={t("Show example: {label}", { label: t(x.label) })}
                 aria-pressed={n === i}
                 onClick={() => setI(n)}
                 className="group grid h-6 place-items-center px-0.5"

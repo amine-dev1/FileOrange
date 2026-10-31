@@ -18,7 +18,7 @@ mod routes;
 mod session_routes;
 pub mod types;
 
-pub use config::{generate_token, ApiConfig, AuthMode, TierLimits};
+pub use config::{generate_token, ApiConfig, AuthMode, TierLimits, Captcha};
 pub use principal::{Principal, Tier};
 
 use axum::extract::DefaultBodyLimit;

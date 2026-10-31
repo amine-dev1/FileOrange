@@ -55,10 +55,11 @@ fn bundled_registry_reports_real_capabilities() {
     let mut cfg = file_core::engine::pdf::HostConfig::for_app();
     cfg.library_dirs = vec![no_pdfium.path().to_path_buf()];
     let no_office = file_core::engine::office::OfficeHost::new(file_core::engine::office::OfficeConfig::nothing());
-    let caps = Registry::bundled_with_office(std::sync::Arc::new(file_core::engine::pdf::PdfHost::new(cfg)), std::sync::Arc::new(no_office)).capabilities();
+    let no_qpdf = file_core::engine::qpdf::QpdfHost::new(file_core::engine::qpdf::QpdfConfig::nothing());
+    let caps = Registry::bundled_with_hosts(std::sync::Arc::new(file_core::engine::pdf::PdfHost::new(cfg)), std::sync::Arc::new(no_office), std::sync::Arc::new(no_qpdf)).capabilities();
     let engine_ids: Vec<_> = caps.engines.iter().map(|e| e.info.id.as_str()).collect();
-    assert_eq!(engine_ids, ["zip", "image", "pdf", "office"]);
-    let (compiled_in, pdf): (Vec<_>, Vec<_>) = caps.engines.iter().partition(|e| e.info.id != "pdf" && e.info.id != "office");
+    assert_eq!(engine_ids, ["zip", "image", "pdf", "office", "qpdf", "pdfsize"]);
+    let (compiled_in, pdf): (Vec<_>, Vec<_>) = caps.engines.iter().filter(|e| e.info.id != "qpdf").partition(|e| e.info.id != "pdf" && e.info.id != "office");
     assert!(compiled_in.iter().all(|e| e.info.availability == Availability::Bundled));
     assert!(compiled_in.iter().all(|e| e.info.version.chars().any(|c| c.is_ascii_digit())), "versions come from Cargo.lock: {:?}", caps.engines);
     assert!(pdf.iter().all(|e| matches!(e.info.availability, Availability::Unavailable { .. })));
@@ -69,6 +70,7 @@ fn bundled_registry_reports_real_capabilities() {
     let pdf_off = |ids: &[&'static str]| ids.iter().map(|i| (*i, false)).collect::<Vec<_>>();
     let mut want = vec![("compress", true), ("extract", true), ("convert_image", true), ("resize_image", true)];
     want.extend(pdf_off(&["pdf_view", "pdf_merge", "pdf_split", "images_to_pdf", "pdf_to_images", "pdf_annotate", "pdf_reorder", "pdf_rotate", "pdf_delete_pages", "pdf_extract_pages", "office_to_pdf"]));
+    want.extend([("pdf_protect", false), ("pdf_unlock", false), ("pdf_compress", true)]);
     assert_eq!(ops, want);
 
     let convert = caps.operations.iter().find(|o| o.spec.id == "convert_image").unwrap();

@@ -4,18 +4,20 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useCapabilities } from "../state/CapabilitiesProvider";
 import { isActive, useJobs } from "../state/JobsProvider";
 import { useTheme, type ThemeChoice } from "../state/ThemeProvider";
+import { LanguageSwitch } from "./LanguageSwitch";
 import { api } from "../lib/api";
 import { formatBytes, formatLimit } from "../lib/format";
 import { TOOLS } from "../lib/tools";
 import type { MeResponse } from "../lib/types";
 import { Badge, Button, ProgressBar, cx } from "./ui";
+import { t } from "../lib/i18n";
 
 const NAV = [
   { to: "/app", label: "Dashboard", Icon: House, end: true },
   { to: "/convert", label: "Convert", Icon: TOOLS[0].Icon },
-  { to: "/resize", label: "Resize images", Icon: TOOLS[1].Icon },
+  { to: "/resize", label: "Compress images", Icon: TOOLS[1].Icon },
   { to: "/pdf", label: "PDF tools", Icon: FileText },
-  { to: "/compress", label: "Compress", Icon: TOOLS[2].Icon },
+  { to: "/compress", label: "Make a ZIP", Icon: TOOLS[2].Icon },
   { to: "/extract", label: "Extract", Icon: TOOLS[3].Icon },
   { to: "/jobs", label: "Recent jobs", Icon: Clock },
   { to: "/about", label: "About", Icon: Info },
@@ -29,15 +31,15 @@ function ThemeSwitch() {
     { v: "dark", label: "Dark", Icon: Moon },
   ];
   return (
-    <div role="radiogroup" aria-label="Colour theme" className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+    <div role="radiogroup" aria-label={t("Colour theme")} className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
       {opts.map(({ v, label, Icon }) => (
         <button
           key={v}
           type="button"
           role="radio"
           aria-checked={choice === v}
-          aria-label={label}
-          title={label}
+          aria-label={t(label)}
+          title={t(label)}
           onClick={() => setChoice(v)}
           className={cx("grid size-7 place-items-center rounded-md", choice === v ? "bg-white text-brand-700 shadow-sm dark:bg-slate-950 dark:text-brand-300" : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}
         >
@@ -67,21 +69,21 @@ function UsageMeter() {
   if (!me || me.tier === "local" || me.limits.daily_bytes == null) return null;
   const pct = Math.min(100, (me.usage.bytes_today / me.limits.daily_bytes) * 100);
   return (
-    <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-400" aria-label="Today's allowance">
+    <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-400" aria-label={t("Today's allowance")}>
       <p className="mb-1.5 font-medium text-slate-800 dark:text-slate-200">
-        Today: {formatBytes(me.usage.bytes_today)} of {formatLimit(me.limits.daily_bytes)}
+        {t("Today: {used} of {limit}", { used: formatBytes(me.usage.bytes_today), limit: formatLimit(me.limits.daily_bytes) })}
       </p>
-      <ProgressBar percent={pct} label="Today's upload allowance used" />
-      <p className="mt-1.5">Resets at midnight UTC.</p>
+      <ProgressBar percent={pct} label={t("Today's upload allowance used")} />
+      <p className="mt-1.5">{t("Resets at midnight UTC.")}</p>
     </div>
   );
 }
 
 function Brand() {
   return (
-    <Link to="/" className="flex items-center gap-2.5 rounded-lg px-2" aria-label="OrangeFile home">
+    <Link to="/" className="flex items-center gap-2.5 rounded-lg px-2" aria-label={t("OrangeFile home")}>
       <img src="/logo.png" alt="" width={32} height={32} className="size-8 rounded-lg" />
-      <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">OrangeFile</span>
+      <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">{t("OrangeFile")}</span>
     </Link>
   );
 }
@@ -92,10 +94,10 @@ function ServiceBanner(): ReactNode {
   return (
     <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
       <span>
-        <strong className="font-semibold">The processing service isn't reachable.</strong> {state.message}
+        <strong className="font-semibold">{t("The processing service isn't reachable.")}</strong> {t(state.message)}
       </span>
       <Button size="sm" icon={<RefreshCw className="size-4" aria-hidden />} onClick={reload}>
-        Try again
+        {t("Try again")}
       </Button>
     </div>
   );
@@ -111,7 +113,7 @@ export function AppShell() {
   const running = jobs.filter(isActive).length;
 
   const nav = (
-    <nav aria-label="Main" className="flex flex-col gap-1">
+    <nav aria-label={t("Main")} className="flex flex-col gap-1">
       {NAV.map(({ to, label, Icon, end }) => (
         <NavLink
           key={to}
@@ -125,8 +127,8 @@ export function AppShell() {
           }
         >
           <Icon className="size-5" aria-hidden />
-          <span className="flex-1">{label}</span>
-          {to === "/jobs" && running > 0 && <Badge tone="brand">{running} running</Badge>}
+          <span className="flex-1">{t(label)}</span>
+          {to === "/jobs" && running > 0 && <Badge tone="brand">{running} {t("running")}</Badge>}
         </NavLink>
       ))}
     </nav>
@@ -135,7 +137,7 @@ export function AppShell() {
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[16rem_1fr]">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:shadow-lg dark:focus:bg-slate-900">
-        Skip to content
+        {t("Skip to content")}
       </a>
       {/* Wide screens: a fixed sidebar. */}
       <aside className="sticky top-0 hidden h-screen flex-col gap-6 border-r border-slate-200 bg-white p-4 lg:flex dark:border-slate-800 dark:bg-slate-900">
@@ -143,8 +145,9 @@ export function AppShell() {
         {nav}
         <div className="mt-auto flex flex-col gap-3">
           <UsageMeter />
-          <div className="px-2">
+          <div className="flex flex-wrap items-center gap-2 px-2">
             <ThemeSwitch />
+            <LanguageSwitch />
           </div>
         </div>
       </aside>
@@ -152,7 +155,7 @@ export function AppShell() {
       {/* Narrow screens: a top bar with a menu. */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden dark:border-slate-800 dark:bg-slate-900/95">
         <Brand />
-        <button type="button" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen((o) => !o)} className="grid size-10 place-items-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+        <button type="button" aria-label={t(open ? "Close menu" : "Open menu")} aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen((o) => !o)} className="grid size-10 place-items-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
           {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
         </button>
       </header>
@@ -160,7 +163,10 @@ export function AppShell() {
         <div id="mobile-nav" className="fixed inset-x-0 top-[3.75rem] z-20 flex flex-col gap-4 border-b border-slate-200 bg-white p-4 shadow-lg lg:hidden dark:border-slate-800 dark:bg-slate-900">
           {nav}
           <UsageMeter />
-          <ThemeSwitch />
+          <div className="flex flex-wrap items-center gap-2">
+            <ThemeSwitch />
+            <LanguageSwitch />
+          </div>
         </div>
       )}
 

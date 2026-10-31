@@ -17,6 +17,7 @@ jobs:
     env:
       ORANGEFILE_REQUIRE_PDFIUM: "1"
       ORANGEFILE_REQUIRE_LIBREOFFICE: "1"
+      ORANGEFILE_REQUIRE_QPDF: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,11 +25,11 @@ jobs:
           node-version: 22
       - name: PDFium (pinned and hash-checked)
         run: node scripts/get-pdfium.mjs
-      - name: LibreOffice
+      - name: LibreOffice and qpdf
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui fonts-dejavu-core fonts-liberation2
+            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui fonts-dejavu-core fonts-liberation2 qpdf
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Tests
@@ -78,7 +79,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui fonts-dejavu-core fonts-liberation2 python3-pil
+            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui fonts-dejavu-core fonts-liberation2 python3-pil qpdf
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Build the engine

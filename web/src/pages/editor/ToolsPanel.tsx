@@ -4,6 +4,7 @@ import type { PdfDocumentResponse } from "../../lib/types";
 import { useCapabilities } from "../../state/CapabilitiesProvider";
 import { Callout, cx } from "../../components/ui";
 import { DocumentDetails } from "./DocumentDetails";
+import { t } from "../../lib/i18n";
 
 export interface ToolAction {
   run: () => void;
@@ -60,25 +61,25 @@ const GROUPS: { title: string; tools: ToolDef[] }[] = [
 export function ToolsPanel({ doc, actions }: { doc: PdfDocumentResponse | null; actions: Record<string, ToolAction> }) {
   const { caps } = useCapabilities();
   return (
-    <aside aria-label="Tools" className="flex min-h-0 flex-col gap-4 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+    <aside aria-label={t("Tools")} className="flex min-h-0 flex-col gap-4 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
       {doc && <DocumentDetails doc={doc} />}
-      <h2 className="px-1 text-sm font-semibold text-slate-900 dark:text-slate-100">Tools</h2>
+      <h2 className="px-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{t("Tools")}</h2>
       {GROUPS.map((g) => (
-        <section key={g.title} aria-label={g.title}>
-          <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">{g.title}</h3>
+        <section key={g.title} aria-label={t(g.title)}>
+          <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">{t(g.title)}</h3>
           <div className="grid grid-cols-2 gap-1.5">
-            {g.tools.map((t) => {
-              const st = caps ? operationState(caps, t.op) : null;
-              const action = actions[t.key];
+            {g.tools.map((tool) => {
+              const st = caps ? operationState(caps, tool.op) : null;
+              const action = actions[tool.key];
               const off = st?.state !== "ready" || !action || !!action.unavailable;
               const why = st && st.state !== "ready" ? st.reason : !action ? "Not available in this version yet." : (action.unavailable ?? "");
               return (
                 <button
-                  key={t.key}
+                  key={tool.key}
                   type="button"
                   aria-disabled={off || undefined}
                   aria-pressed={action?.active}
-                  title={off ? `${why}${t.note ? ` ${t.note}` : ""}` : (t.note ?? t.label)}
+                  title={off ? `${t(why)}${tool.note ? ` ${t(tool.note)}` : ""}` : t(tool.note ?? tool.label)}
                   onClick={() => !off && action?.run()}
                   className={cx(
                     "flex min-h-10 items-center gap-2 rounded-lg border px-2.5 text-left text-xs font-medium transition-colors",
@@ -88,19 +89,19 @@ export function ToolsPanel({ doc, actions }: { doc: PdfDocumentResponse | null; 
                     action?.active && !off && "border-brand-600 bg-brand-50 text-brand-900 dark:bg-brand-900/30 dark:text-brand-200",
                   )}
                 >
-                  <t.Icon className="size-4 shrink-0" aria-hidden />
-                  <span>{t.label}</span>
+                  <tool.Icon className="size-4 shrink-0" aria-hidden />
+                  <span>{t(tool.label)}</span>
                 </button>
               );
             })}
           </div>
-          {g.title === "Sign" && <p className="mt-2 px-1 text-xs text-slate-600 dark:text-slate-400">A drawn signature is only a picture on the page. It is not a verified digital signature.</p>}
+          {g.title === "Sign" && <p className="mt-2 px-1 text-xs text-slate-600 dark:text-slate-400">{t("A drawn signature is only a picture on the page. It is not a verified digital signature.")}</p>}
         </section>
       ))}
-      <Callout tone="warning" title="Before you save">
+      <Callout tone="warning" title={t("Before you save")}>
         <ul>
-          <li>Saving always creates a new copy. Your original PDF is never changed.</li>
-          <li>Editing or saving a signed PDF can make its existing digital signatures invalid.</li>
+          <li>{t("Saving always creates a new copy. Your original PDF is never changed.")}</li>
+          <li>{t("Editing or saving a signed PDF can make its existing digital signatures invalid.")}</li>
         </ul>
       </Callout>
     </aside>

@@ -8,10 +8,11 @@ import { usePreview } from "../lib/usePreview";
 import type { OperationReport } from "../lib/types";
 import { useJobs } from "../state/JobsProvider";
 import { useSelection } from "../state/SelectionProvider";
+import { t } from "../lib/i18n";
 
 export function CompressPage() {
   return (
-    <ToolShell tool="compress" opId="compress" title="Compress to ZIP" subtitle="Pack files and folders into a single ZIP archive.">
+    <ToolShell tool="compress" opId="compress" title={t("Make a ZIP")} subtitle={t("Pack files and folders into a single ZIP archive.")}>
       {(op) => <CompressForm op={op} />}
     </ToolShell>
   );
@@ -31,20 +32,20 @@ function CompressForm({ op }: { op: OperationReport }) {
 
   return (
     <>
-      <FilesCard rows={rows} folders hint="Any files, or a whole folder" noun="file" addLabel="Add files" />
-      <Card title="Options">
-        <Field label="Archive name" htmlFor="archive-name" hint="Leave blank to name it after your files. “.zip” is added for you.">
+      <FilesCard rows={rows} folders hint={t("Any files, or a whole folder")} noun="file" addLabel={t("Add files")} />
+      <Card title={t("Options")}>
+        <Field label={t("Archive name")} htmlFor="archive-name" hint={t("Leave blank to name it after your files. “.zip” is added for you.")}>
           <TextInput id="archive-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={placeholder} maxLength={120} spellCheck={false} />
         </Field>
       </Card>
       <PreviewNotes preview={preview} />
-      <ActionBar note={items.length ? `${plural(items.length, "file")}${folderCount ? ` in ${plural(folderCount, "folder")}` : ""} · ${formatBytes(total)} before compression` : "Add at least one file or folder."}>
+      <ActionBar note={items.length ? `${plural(items.length, "file")}${folderCount ? ` ${t("in {folders}", { folders: plural(folderCount, "folder") })}` : ""} · ${t("{size} before compression", { size: formatBytes(total) })}` : t("Add at least one file or folder.")}>
         <Button
           variant="primary"
           disabled={!valid || !preview.ok || preview.loading}
           onClick={() => start({ tool: "compress", operation: "compress", options, files: toUploads(items), title: withExtension(name, "zip", items.length === 1 ? placeholder : "archive"), detail: titleFor(items) })}
         >
-          Compress
+          {t("Make the ZIP")}
         </Button>
       </ActionBar>
     </>
