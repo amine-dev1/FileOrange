@@ -25,7 +25,7 @@ pub struct TierLimits {
 const MIB: u64 = 1024 * 1024;
 
 impl TierLimits {
-    /// Limits for a public visitor with no account: a 100 MB file, a modest daily volume, one job at a time.
+    /// Limits for a public visitor with no account: a 300 MB file by default, a modest daily volume, one job at a time.
     pub fn anonymous(max_file_bytes: u64) -> Self {
         Self {
             max_file_bytes,
@@ -112,7 +112,7 @@ impl ApiConfig {
             bind: SocketAddr::from(([127, 0, 0, 1], 0)),
             token: generate_token(),
             auth: AuthMode::LocalToken,
-            anonymous: TierLimits::anonymous(100 * MIB),
+            anonymous: TierLimits::anonymous(300 * MIB),
             allowed_hosts: vec![],
             static_dir: None,
             client_ip_header: None,
@@ -192,6 +192,13 @@ impl ApiConfig {
             }
         }
         Ok(())
+    }
+}
+
+impl ApiConfig {
+    /// A public server, where visitors share the machine.
+    pub fn is_hosted(&self) -> bool {
+        matches!(self.auth, AuthMode::Sessions { .. })
     }
 }
 

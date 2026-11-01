@@ -31,6 +31,7 @@ const siteHeaders = Object.fromEntries(headersFile.split("\n").slice(1).map((l) 
 const redirects = readFileSync(join(dist, "_redirects"), "utf8").trim();
 ok(redirects.startsWith("/*") && redirects.endsWith("200"), "the single-page-app redirect is published");
 ok(siteHeaders["content-security-policy"]?.includes(`connect-src 'self' ${API}`), "the site's policy allows the engine's address, and only that");
+ok(/camera=\(self\)/.test(siteHeaders["permissions-policy"] ?? ""), "the site may use the camera itself (QR scanning), and nothing embedded in it may");
 
 // a static host like Netlify: files, then the redirect rule, with the generated headers on everything
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".woff2": "font/woff2", ".json": "application/json" };
@@ -82,7 +83,8 @@ const problems = [];
 page.on("pageerror", (e) => problems.push("pageerror: " + e.message));
 page.on("console", (m) => { if (m.type() === "error") problems.push("console: " + m.text()); });
 const toApi = [];
-page.on("request", (r) => { if (r.url().startsWith(API)) toApi.push(r.url()); });
+const posts = [];
+page.on("request", (r) => { if (r.url().startsWith(API)) { toApi.push(r.url()); if (r.method() === "POST") posts.push(r.url()); } });
 
 console.log("\nSite and engine on different origins");
 const first = await page.goto(`${SITE}/convert`);
@@ -115,6 +117,17 @@ if (env.ORANGEFILE_PDFIUM) {
   await page.waitForSelector('[data-position="3"]');
   await page.waitForFunction(() => document.querySelectorAll("[data-position] img").length === 3);
   ok(await page.locator('[aria-label="Page preview"] img').first().evaluate((i) => i.naturalWidth > 0), "PDF page pictures load across origins");
+}
+
+// the QR tool works under the site's security headers (pictures from data: URLs, the decoder bundled, nothing sent)
+{
+  const before = posts.length;
+  await page.goto(`${SITE}/qr`);
+  await page.getByLabel("Web address").fill("orangefile.app");
+  await page.getByText("Checked: this code scans correctly.").waitFor({ timeout: 15_000 });
+  ok(await page.getByTestId("qr-preview").evaluate((i) => i.naturalWidth > 0), "the QR preview shows under the site's policy");
+  const sent = posts.slice(before).filter((u) => !u.endsWith("/api/v1/session"));
+  ok(sent.length === 0, `making a QR code sends nothing to the engine: ${sent.join(", ")}`);
 }
 
 // the engine refuses a page from an origin it wasn't told about

@@ -1,4 +1,4 @@
-import { Clock, FileText, House, Info, Menu, Monitor, Moon, RefreshCw, Sun, X } from "lucide-react";
+import { QrCode, Clock, FileText, House, Info, Menu, Monitor, Moon, RefreshCw, Sun, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useCapabilities } from "../state/CapabilitiesProvider";
@@ -19,6 +19,7 @@ const NAV = [
   { to: "/pdf", label: "PDF tools", Icon: FileText },
   { to: "/compress", label: "Make a ZIP", Icon: TOOLS[2].Icon },
   { to: "/extract", label: "Extract", Icon: TOOLS[3].Icon },
+  { to: "/qr", label: "QR codes", Icon: QrCode },
   { to: "/jobs", label: "Recent jobs", Icon: Clock },
   { to: "/about", label: "About", Icon: Info },
 ];

@@ -41,6 +41,13 @@ The app calls same-origin `/api/v1/...` and holds **no secret in its code**. Two
 
 `npm run test:e2e:hosted` runs the whole browser suite against a hosted server (1 MB file limit so that "too big" is easy to test).
 
+## QR codes (`/qr`)
+
+Made and read entirely in the browser, so the tool works without the engine and has no size or daily limit: `qrcode` (MIT) draws the
+code and `jsQR` (Apache-2.0) finds codes in pictures and in the camera picture. The pure parts (what goes in a Wi-Fi, contact or email
+code, and what a scanned text means) are in `src/lib/qr.ts` with unit tests; drawing, the self-check and scanning are in
+`src/lib/qrImage.ts`. The camera needs `Permissions-Policy: camera=(self)`, which both the server and the Netlify headers send.
+
 ## Languages (English, French)
 
 Visible text goes through `t()` from `src/lib/i18n.ts`, with the English text as the key: `t("Convert images")`, or with values,

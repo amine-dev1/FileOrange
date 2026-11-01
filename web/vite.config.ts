@@ -38,7 +38,7 @@ function siteHeaders(apiOrigin: string) {
       const cf = "https://challenges.cloudflare.com";
       const csp = ["default-src 'self'", `script-src 'self' ${cf}`, "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "font-src 'self'", `connect-src 'self'${apiOrigin ? " " + apiOrigin : ""}`, `frame-src ${cf}`, "object-src 'none'", "base-uri 'none'", "frame-ancestors 'none'", "form-action 'self'"].join("; ");
       mkdirSync(dir, { recursive: true });
-      writeFileSync(join(dir, "_headers"), `/*\n  Content-Security-Policy: ${csp}\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: no-referrer\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n`);
+      writeFileSync(join(dir, "_headers"), `/*\n  Content-Security-Policy: ${csp}\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: no-referrer\n  Permissions-Policy: camera=(self), microphone=(), geolocation=()\n`);
     },
   };
 }

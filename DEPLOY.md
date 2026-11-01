@@ -19,7 +19,7 @@ visitor ──HTTPS──▶ Fly.io proxy ──▶ one machine: file-api (hoste
 
 * **No sign-up.** The first visit asks the server for a *session* (a signed token, valid 24 h, kept in the browser and renewed by the app).
   It is an identity for limits and for "this is your job", not a login. Clearing the browser data starts a new one.
-* **Limits** (defaults): 100 MB per file, 300 MB per job, 20 files, one job running at a time per visitor, 600 MB uploaded per day per visitor,
+* **Limits** (defaults): 300 MB per file, 900 MB per job, 20 files, one job running at a time per visitor, 1.8 GB uploaded per day per visitor,
   plus per-IP limits so that clearing the browser data does not give unlimited quota. Results are deleted 15 minutes after they are ready.
 * **Privacy:** files exist only on the machine's disk, for at most 15 minutes after the result is ready. Logs contain request ids, paths and
   status codes, never file names or content.
@@ -115,7 +115,7 @@ Changes to the web app alone don't redeploy Fly (Netlify handles those). To depl
 |---|---|---|
 | `FILE_API_SESSION_SECRET` | `fly secrets set` | Required, 32+ characters. Signs sessions and download links. |
 | `FILE_API_ALLOWED_HOSTS` | `fly.toml` | Every public host name, comma-separated. Add your own domain here when you attach one (`fly certs add yourdomain.com`). Other host names are refused (protects against DNS rebinding). |
-| `FILE_API_MAX_FILE_MB` | `fly.toml` | Largest file. Other limits scale from it: 3× per job, 6× per day. |
+| `FILE_API_MAX_FILE_MB` | `fly.toml` | Largest file (default 300). Other limits scale from it: 3× per job, 6× per day. When the disk is nearly full (less than twice the upload plus 512 MB free), new uploads get "the server is busy, try again in a few minutes" instead of filling it. |
 | `FILE_API_CLIENT_IP_HEADER` | the image | `fly-client-ip`: where Fly puts the visitor's address. Without it, all visitors would look like one IP. **Only correct behind Fly's proxy.** |
 | `FILE_API_ALLOWED_ORIGINS` | optional | Another website allowed to call the API from a browser. Normally empty: the web app is served by the same server. |
 

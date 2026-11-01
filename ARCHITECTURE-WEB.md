@@ -118,7 +118,7 @@ I agree with Supabase for **auth, the database and files**. It replaces three th
 | Phase | What | Result | Rough effort |
 |---|---|---|---|
 | **0 (done)** | React + Tailwind web UI on the existing local engine; `npm run dev:all` | Works for you, on a trusted machine | done |
-| **1: single hosted server (built; deploy with `DEPLOY.md`)** | `hosted` mode in `file-api`: anonymous signed sessions (no sign-up), job ownership, quotas per session and per IP, host/origin checks, signed download links, web app served by the same process, container for Fly.io (one machine, files on its disk, 100 MB per file). **Supabase is not used yet.** | A first public beta for hundreds of users | built; deploy and observe |
+| **1: single hosted server (built; deploy with `DEPLOY.md`)** | `hosted` mode in `file-api`: anonymous signed sessions (no sign-up), job ownership, quotas per session and per IP, host/origin checks, signed download links, web app served by the same process, container for Fly.io (one machine, files on its disk, 300 MB per file). **Supabase is not used yet.** | A first public beta for hundreds of users | built; deploy and observe |
 | **2a: Supabase for data only (next, small)** | The server, not the browser, writes one row per finished job (operation, sizes, duration, outcome; never names or content) to a Postgres table using Supabase's secret key kept in a Fly secret. Row Level Security on, no public policies. Gives you usage statistics. | Numbers about real use | a few days |
 | **2: Supabase data plane** | `jobs` table, direct signed uploads, Realtime progress, Postgres queue, separate worker binary and pools, sweeper, `ref` inputs | Horizontally scalable, stateless gateway | 4 to 6 weeks |
 | **3: hardening and growth** | gVisor/micro-VM for the office pool, sticky viewer, billing (Stripe), virus scan, API keys, teams, audit log | Ready for paying customers | ongoing |
@@ -133,12 +133,12 @@ Changes the web app needs along the way are small because `web/src/lib/api.ts` i
 
 ## 9. Decisions I need from you
 
-Decided: anonymous use without sign-up; 100 MB per file; conversion on Fly.io; Supabase for stored data only.
+Decided: anonymous use without sign-up; 300 MB per file; conversion on Fly.io; Supabase for stored data only.
 
 Still open:
 
 1. **Is a session in the browser enough as "identity"?** It limits and separates visitors but cannot follow someone across devices or recover jobs after clearing browser data. Accounts (Supabase Auth) would, and would also allow per-user plans. Fine for a free beta; revisit before paid plans.
-2. **Other limits:** files per job (20), job size (300 MB), daily volume (600 MB), one concurrent job. Right for a free tier?
+2. **Other limits:** files per job (20), job size (900 MB), daily volume (1.8 GB), one concurrent job. Right for a free tier?
 3. **Region:** the proposed `fly.toml` uses Paris. Same question for the Supabase project (EU).
 4. **Business model:** free with limits, paid plans, or internal tool? It decides whether billing is Phase 3 or Phase 1.
 5. **Abuse protection:** add a CAPTCHA (Cloudflare Turnstile) before you promote the site publicly?

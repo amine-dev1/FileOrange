@@ -29,6 +29,10 @@ subtle = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 
+[target.'cfg(unix)'.dependencies]
+# Free disk space (statvfs), so a busy public server refuses uploads instead of filling its disk.
+libc = "0.2"
+
 [dev-dependencies]
 tokio-stream = "0.1"
 tempfile = "3"

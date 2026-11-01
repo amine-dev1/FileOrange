@@ -22,6 +22,8 @@ import { t } from "./lib/i18n";
 
 // The editor is the largest screen and not everyone opens it, so it loads on demand.
 const PdfEditorPage = lazy(() => import("./pages/editor/PdfEditorPage"));
+// The QR tool brings its own encoder and decoder, so it loads on demand too.
+const QrPage = lazy(() => import("./pages/Qr").then((m) => ({ default: m.QrPage })));
 
 export function App() {
   return (
@@ -56,6 +58,20 @@ export function App() {
         <Route path="pdf/images-to-pdf" element={<ImagesToPdfPage />} />
         <Route path="pdf/to-images" element={<PdfToImagesPage />} />
         <Route path="pdf/documents-to-pdf" element={<OfficeToPdfPage />} />
+        <Route
+          path="qr"
+          element={
+            <Suspense
+              fallback={
+                <p role="status" className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                  <Spinner /> {t("Loading…")}
+                </p>
+              }
+            >
+              <QrPage />
+            </Suspense>
+          }
+        />
         <Route path="jobs" element={<JobsPage />} />
         <Route path="about" element={<About />} />
         <Route path="*" element={<NotFound />} />

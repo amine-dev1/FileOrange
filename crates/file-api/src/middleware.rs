@@ -116,7 +116,7 @@ pub async fn page_security_headers(req: Request, next: Next) -> Response {
             ("x-content-type-options", "nosniff"),
             ("x-frame-options", "DENY"),
             ("referrer-policy", "no-referrer"),
-            ("permissions-policy", "camera=(), microphone=(), geolocation=()"),
+            ("permissions-policy", "camera=(self), microphone=(), geolocation=()"),
         ] {
             h.insert(header::HeaderName::from_static(k), HeaderValue::from_static(v));
         }

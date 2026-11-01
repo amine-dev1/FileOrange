@@ -259,9 +259,9 @@ section("Dashboard follows what the engine reports");
   await page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ }).waitFor();
   const caps = await (await eng("/capabilities")).json();
   const cards = await page.locator("#tools-heading + div a, #tools-heading + div [aria-disabled]").count();
-  eq(cards, 14, "one card per tool");
+  eq(cards, 15, "one card per tool (the QR tool runs in the browser, so it is always there)");
   const open_ = await page.locator("#tools-heading + div a").count();
-  eq(open_, caps.operations.filter((o) => ["convert_image", "resize_image", "compress", "extract", "pdf_view", "pdf_annotate", "pdf_compress", "pdf_protect", "pdf_unlock", "pdf_merge", "pdf_split", "images_to_pdf", "pdf_to_images", "office_to_pdf"].includes(o.id) && o.available).length, "cards that can be opened = available operations");
+  eq(open_, caps.operations.filter((o) => ["convert_image", "resize_image", "compress", "extract", "pdf_view", "pdf_annotate", "pdf_compress", "pdf_protect", "pdf_unlock", "pdf_merge", "pdf_split", "images_to_pdf", "pdf_to_images", "office_to_pdf"].includes(o.id) && o.available).length + 1, "cards that can be opened = available operations, plus the QR tool");
   // Selecting files offers exactly the tools that fit them.
   await input(page).setInputFiles([red]);
   await page.getByRole("heading", { name: "Selected files" }).waitFor();
@@ -894,6 +894,153 @@ if (HOSTED) {
   }
 }
 
+section("QR codes: create, check, download, read back (in the browser, nothing uploaded)");
+{
+  const { default: QRCode } = await import("qrcode");
+  const a = await open("/qr");
+  const { page } = a;
+  const uploads = [];
+  page.on("request", (r) => { if (r.method() === "POST" && /\/api\/v1\/(jobs|pdf)/.test(r.url())) uploads.push(r.url()); });
+  await page.getByRole("heading", { name: "QR codes", level: 1 }).waitFor();
+  ok(await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "QR codes" }).isVisible(), "QR codes is in the menu");
+
+  // a link with an accent: UTF-8 must survive the round trip
+  const link = "https://orangefile.app/café?x=1";
+  await page.getByLabel("Web address").fill("orangefile.app/café?x=1");
+  await page.getByTestId("qr-preview").waitFor();
+  await page.getByText("Checked: this code scans correctly.").waitFor({ timeout: 15_000 });
+  ok(true, "the code is drawn and read back by the page itself");
+  await page.getByText("What's inside the code").click();
+  ok((await page.locator("details pre").innerText()) === link, "a bare address gets https:// in the code");
+  const save = async (name) => {
+    const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name }).click()]);
+    const f = join(work, dl.suggestedFilename());
+    await dl.saveAs(f);
+    return { file: f, name: dl.suggestedFilename(), bytes: readFileSync(f) };
+  };
+  await radio(page, "2048 px").click();
+  const pngOut = await save("Download PNG");
+  eq(pngOut.name, "qr-orangefile.app.png", "the PNG is named after the site");
+  ok(pngOut.bytes.subarray(1, 4).toString() === "PNG" && pngOut.bytes.readUInt32BE(16) === 2048 && pngOut.bytes.readUInt32BE(20) === 2048, "a real 2048×2048 PNG");
+  const svgOut = await save("Download SVG");
+  ok(svgOut.name === "qr-orangefile.app.svg" && /^<svg [^>]*viewBox="0 0 \d+ \d+"/.test(svgOut.bytes.toString()), "and an SVG");
+
+  // colours that phones can't read are flagged, and the self-check notices
+  await page.getByLabel("Code colour, hex code").fill("#eeeeee");
+  await page.getByText(/The code is lighter than its background|The colours are too close/).first().waitFor();
+  await page.getByText("This code may not scan.", { exact: false }).waitFor({ timeout: 15_000 });
+  ok(true, "low contrast is warned about and the check fails");
+  await page.getByRole("button", { name: "Swap colours" }).click();
+  await page.getByText("The code is lighter than its background", { exact: false }).waitFor();
+  ok(true, "a light code on a dark background is warned about");
+  await page.getByLabel("Code colour, hex code").fill("#7c2d12");
+  await page.getByLabel("Background, hex code").fill("#ffffff");
+  await page.getByText("Checked: this code scans correctly.").waitFor({ timeout: 15_000 });
+
+  // a logo forces the highest error correction and still scans
+  await page.locator('input[type=file][aria-label="Add a logo"]').setInputFiles([green]);
+  await page.getByRole("img", { name: "Logo" }).waitFor();
+  ok(await radio(page, "Low (7%)").isDisabled() && (await radio(page, "Highest (30%)").getAttribute("aria-checked")) === "true", "with a logo, only the highest error correction is offered");
+  await page.getByText("Checked: this code scans correctly.").waitFor({ timeout: 15_000 });
+  ok(true, "the code with a logo still scans");
+  const withLogo = await save("Download PNG");
+  await page.getByRole("button", { name: "Remove logo" }).click();
+
+  // Wi-Fi: the payload, and the password rules
+  await radio(page, "Wi-Fi").click();
+  await page.getByLabel("Network name (SSID)").fill("Maison;5G");
+  await page.getByLabel("Password", { exact: true }).fill("court");
+  await page.getByText("A WPA password has 8 to 63 characters.").waitFor();
+  await page.getByLabel("Password", { exact: true }).fill("motdepasse123");
+  await page.getByText("Checked: this code scans correctly.").waitFor({ timeout: 15_000 });
+  eq(await page.locator("details pre").textContent(), "WIFI:T:WPA;S:Maison\\;5G;P:motdepasse123;;", "the Wi-Fi code is in the standard format, with escaping");
+
+  // too much for one code
+  await radio(page, "Text").click();
+  await page.getByLabel("Text", { exact: true }).fill("x".repeat(3500));
+  await radio(page, "Highest (30%)").click();
+  await page.getByText("This is too much for one QR code.", { exact: false }).first().waitFor();
+  ok(await page.getByRole("button", { name: "Download PNG" }).isDisabled(), "too much text says so, and nothing can be downloaded");
+
+  // reading: the files made above, a Wi-Fi code made elsewhere, and a picture with no code
+  await radio(page, "Read a QR code").click();
+  ok(page.url().endsWith("/qr?mode=read"), "the reading tab has its own address");
+  await page.getByText("Up to", { exact: false }).count().then((n) => eq(n, 0, "no server size limit on a tool that uploads nothing"));
+  await input(page, "Choose pictures").setInputFiles([pngOut.file]);
+  await page.getByText("QR code found").first().waitFor({ timeout: 15_000 });
+  eq(await page.getByTestId("qr-text").first().innerText(), link, "the downloaded PNG reads back to the same link, accent included");
+  eq(decodeURI(await page.getByRole("link", { name: "Open link" }).first().getAttribute("href")), link, "with a button to open it");
+  ok(await page.getByText("orangefile.app", { exact: true }).isVisible(), "and the website name shown on its own");
+  await page.getByRole("button", { name: /^Remove / }).first().click();
+
+  const wifiPng = join(work, "wifi-code.png");
+  await QRCode.toFile(wifiPng, "WIFI:S:Bureau\\:2;T:WPA;P:s3cr3t\\;pass;H:false;;", { width: 600, margin: 6 });
+  const photo = join(work, "photo-with-code.png");
+  // a code that takes a small part of a big picture, as in a photo
+  {
+    const m = QRCode.create("Bonjour tout le monde", { errorCorrectionLevel: "M" }).modules;
+    const W = 1600, H = 1200, cell = 7, ox = 900, oy = 650;
+    const raw = Buffer.alloc((W * 3 + 1) * H, 0);
+    for (let y = 0; y < H; y++) {
+      raw[y * (W * 3 + 1)] = 0;
+      for (let x = 0; x < W; x++) {
+        const mx = Math.floor((x - ox) / cell), my = Math.floor((y - oy) / cell);
+        const dark = mx >= 0 && my >= 0 && mx < m.size && my < m.size && m.data[my * m.size + mx];
+        const o = y * (W * 3 + 1) + 1 + x * 3;
+        const bgc = [210 - (y >> 4), 190, 160 + (x >> 5)];
+        const c = dark ? [20, 20, 30] : mx >= -4 && my >= -4 && mx < m.size + 4 && my < m.size + 4 ? [250, 250, 245] : bgc;
+        raw[o] = c[0]; raw[o + 1] = c[1]; raw[o + 2] = c[2];
+      }
+    }
+    const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td)); return Buffer.concat([len, td, crc]); };
+    const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4); ihdr[8] = 8; ihdr[9] = 2;
+    writeFileSync(photo, Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]));
+  }
+  await input(page, "Choose pictures").setInputFiles([wifiPng, red, photo, withLogo.file]);
+  await page.waitForFunction(() => document.querySelectorAll("main h3").length >= 4, null, { timeout: 20_000 });
+  const titles = (await page.locator("main h3").allTextContents()).join(" | ");
+  ok((titles.match(/(?<!No )QR code found/g) ?? []).length === 3 && titles.includes("No QR code found"), "four pictures at once: three codes found, one picture without a code: " + titles);
+  ok(await page.getByText("Bureau:2", { exact: true }).isVisible() && await page.getByText("s3cr3t;pass", { exact: true }).isVisible(), "a Wi-Fi code shows the network and password, escapes removed");
+  ok(await page.getByRole("button", { name: "Copy password" }).isVisible(), "with a button to copy the password");
+  ok(await page.getByTestId("qr-text").filter({ hasText: "Bonjour tout le monde" }).count() === 1, "a small code in a big photo is found");
+  ok(await page.getByTestId("qr-text").filter({ hasText: link }).count() === 1, "the code with a logo reads back");
+  ok(await page.getByText("Try a sharper picture", { exact: false }).isVisible(), "a picture without a code gets advice");
+  await page.evaluate(axeSrc);
+  const v = await page.evaluate(async () => (await window.axe.run(document, { runOnly: ["wcag2a", "wcag2aa", "wcag21aa"] })).violations.map((x) => `${x.id}: ${x.nodes[0].target}`));
+  ok(v.length === 0, `QR results pass axe: ${v.join("; ")}`);
+  eq(uploads, [], "nothing was sent to the server");
+  eq(errorsOf(a), [], "no console errors on the QR page");
+  await a.close();
+
+  // the camera: Chromium's fake camera plays a video of a QR code
+  const W = 640, H = 480;
+  const m = QRCode.create("https://orangefile.app/camera", { errorCorrectionLevel: "M" }).modules;
+  const cell = Math.floor(320 / (m.size + 8));
+  const y = Buffer.alloc(W * H, 235);
+  const ox = Math.floor((W - m.size * cell) / 2), oy = Math.floor((H - m.size * cell) / 2);
+  for (let r = 0; r < m.size; r++) for (let c = 0; c < m.size; c++) if (m.data[r * m.size + c]) for (let dy = 0; dy < cell; dy++) y.fill(16, (oy + r * cell + dy) * W + ox + c * cell, (oy + r * cell + dy) * W + ox + (c + 1) * cell);
+  const uv = Buffer.alloc((W / 2) * (H / 2) * 2, 128);
+  const frame = Buffer.concat([Buffer.from("FRAME\n"), y, uv]);
+  const y4m = join(work, "qr-camera.y4m");
+  writeFileSync(y4m, Buffer.concat([Buffer.from(`YUV4MPEG2 W${W} H${H} F10:1 Ip A1:1 C420jpeg\n`), ...Array(5).fill(frame)]));
+  const camBrowser = await chromium.launch({
+    ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: "msedge" }),
+    args: ["--no-sandbox", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-video-capture=${y4m}`],
+  });
+  const cctx = await withFakeCaptcha(await camBrowser.newContext({ viewport: { width: 1000, height: 900 }, extraHTTPHeaders: HOSTED ? { "x-test-ip": "10.99.0.1" } : undefined }));
+  await cctx.grantPermissions(["camera"], { origin: BASE });
+  const cp = await cctx.newPage();
+  const cerr = [];
+  cp.on("pageerror", (e) => cerr.push(e.message));
+  await cp.goto(BASE + "/qr?mode=read");
+  await cp.getByRole("button", { name: "Scan with the camera" }).click();
+  await cp.getByText("QR code found").waitFor({ timeout: 20_000 });
+  eq(await cp.getByTestId("qr-text").innerText(), "https://orangefile.app/camera", "the camera reads a code live, then stops");
+  eq(await cp.locator("video").count(), 0, "the camera view closes once the code is read");
+  eq(cerr, [], "no page errors with the camera");
+  await camBrowser.close();
+}
+
 section("Recent jobs, theme and phone layout");
 {
   const a = await open("/convert");
@@ -967,7 +1114,7 @@ for (const dark of [false, true]) {
   await input(page).setInputFiles([red, pdfFix("three-pages.pdf")]);
   await page.getByRole("heading", { name: "Selected files" }).waitFor();
   await check("dashboard with files");
-  for (const [p, n] of [["/convert", "convert"], ["/resize", "resize"], ["/compress", "compress"], ["/extract", "extract"], ["/pdf", "PDF hub"], ["/pdf/merge", "merge"], ["/pdf/split", "split"], ["/pdf/images-to-pdf", "images to PDF"], ["/pdf/to-images", "PDF to images"], ["/pdf/documents-to-pdf", "documents to PDF"], ["/pdf/compress", "compress PDF"], ["/pdf/protect", "protect PDF"], ["/pdf/unlock", "unlock PDF"], ["/jobs", "jobs"], ["/about", "about"]]) {
+  for (const [p, n] of [["/convert", "convert"], ["/resize", "resize"], ["/compress", "compress"], ["/extract", "extract"], ["/pdf", "PDF hub"], ["/pdf/merge", "merge"], ["/pdf/split", "split"], ["/pdf/images-to-pdf", "images to PDF"], ["/pdf/to-images", "PDF to images"], ["/pdf/documents-to-pdf", "documents to PDF"], ["/pdf/compress", "compress PDF"], ["/pdf/protect", "protect PDF"], ["/pdf/unlock", "unlock PDF"], ["/qr", "QR create"], ["/qr?mode=read", "QR read"], ["/jobs", "jobs"], ["/about", "about"]]) {
     await go(p);
     await page.waitForTimeout(200);
     await check(n);

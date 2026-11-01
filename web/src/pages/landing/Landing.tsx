@@ -82,6 +82,12 @@ const GROUPS: {
         flow: ".jpg ×4 → .pdf",
         to: "/pdf/images-to-pdf",
       },
+      {
+        name: "QR codes",
+        what: "Make one for a link, Wi-Fi or contact, or read one from a picture.",
+        flow: "link ⇄ QR",
+        to: "/qr",
+      },
     ],
   },
   {

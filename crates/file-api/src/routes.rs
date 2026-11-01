@@ -178,8 +178,44 @@ fn stored_name(original: &str, index: usize) -> String {
     file_core::fs_safe::safe_file_name(base).unwrap_or_else(|_| format!("file-{index}"))
 }
 
-pub async fn create_job(State(st): State<AppState>, Extension(who): Extension<Principal>, mut mp: Multipart) -> Result<(StatusCode, HeaderMap, Json<CreateJobResponse>), ApiError> {
+/// Space kept free on the server's disk whatever happens, so running jobs can finish writing.
+const DISK_RESERVE: u64 = 512 * 1024 * 1024;
+
+/// Free bytes on the disk holding `path`, if the system can tell.
+fn free_bytes(path: &std::path::Path) -> Option<u64> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStrExt;
+        let c = std::ffi::CString::new(path.as_os_str().as_bytes()).ok()?;
+        let mut st: libc::statvfs = unsafe { std::mem::zeroed() };
+        // SAFETY: `c` is a valid NUL-terminated path and `st` is a properly sized, writable statvfs.
+        if unsafe { libc::statvfs(c.as_ptr(), &mut st) } != 0 {
+            return None;
+        }
+        Some((st.f_bavail as u64).saturating_mul(st.f_frsize as u64))
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = path;
+        None
+    }
+}
+
+/// Is there room for an upload of `incoming` bytes? It is stored once and its results take up to about as much again.
+pub(crate) fn room_for(free: Option<u64>, incoming: u64) -> bool {
+    free.is_none_or(|f| f >= incoming.saturating_mul(2).saturating_add(DISK_RESERVE))
+}
+
+pub async fn create_job(State(st): State<AppState>, Extension(who): Extension<Principal>, headers: HeaderMap, mut mp: Multipart) -> Result<(StatusCode, HeaderMap, Json<CreateJobResponse>), ApiError> {
     let limits = st.cfg.limits_for(&who);
+    // A public server shares one disk between visitors: say "busy" rather than fill it up.
+    if st.cfg.is_hosted() {
+        let incoming = headers.get(header::CONTENT_LENGTH).and_then(|v| v.to_str().ok()).and_then(|v| v.parse::<u64>().ok()).unwrap_or(limits.max_request_bytes);
+        if !room_for(free_bytes(&st.cfg.data_dir), incoming.min(limits.max_request_bytes)) {
+            tracing::warn!("disk nearly full, upload refused");
+            return Err(ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "SERVER_BUSY", "The server is busy with other large files. Try again in a few minutes."));
+        }
+    }
     // Everything that can say "no" because of who is asking comes before a byte is stored.
     let owner_active = st.store.count_active(|r| r.owner == who.id);
     let ip_active = who.ip.map_or(0, |ip| st.store.count_active(|r| r.ip == Some(ip)));
@@ -615,4 +651,19 @@ pub async fn preview(
     }
     out.ok = out.errors.is_empty();
     Ok(Json(out))
+}
+
+#[cfg(test)]
+mod disk_tests {
+    use super::*;
+
+    #[test]
+    fn uploads_need_room_for_input_output_and_a_reserve() {
+        const MB: u64 = 1024 * 1024;
+        assert!(room_for(None, 900 * MB), "unknown free space never blocks");
+        assert!(room_for(Some(2_400 * MB), 900 * MB));
+        assert!(!room_for(Some(2_000 * MB), 900 * MB));
+        assert!(room_for(Some(600 * MB), 10 * MB));
+        assert!(!room_for(Some(400 * MB), 1));
+    }
 }

@@ -11,7 +11,7 @@ primary_region = "cdg"   # Paris. "fra" (Frankfurt) or "ams" (Amsterdam) also wo
   FILE_API_ALLOWED_HOSTS = "fileorange-amine.fly.dev"
   # The Netlify site that calls this server (exact address, no trailing slash). Add your own domain here too, comma-separated.
   FILE_API_ALLOWED_ORIGINS = "https://orangefile.netlify.app"
-  FILE_API_MAX_FILE_MB = "100"
+  FILE_API_MAX_FILE_MB = "300"
   # Secrets are not set here: `fly secrets set FILE_API_SESSION_SECRET=...` (see DEPLOY.md).
 
 [http_service]

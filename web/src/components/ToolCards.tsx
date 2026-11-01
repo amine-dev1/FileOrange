@@ -7,7 +7,7 @@ import { t } from "../lib/i18n";
 
 function ToolCard({ tool }: { tool: ToolDef }) {
   const { caps } = useCapabilities();
-  const st = caps ? operationState(caps, tool.op) : null;
+  const st = caps && !tool.local ? operationState(caps, tool.op) : null;
   const off = st !== null && st.state !== "ready";
   const body = (
     <>

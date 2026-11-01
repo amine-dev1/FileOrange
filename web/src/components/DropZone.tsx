@@ -16,10 +16,12 @@ interface Props {
   hint?: string;
   compact?: boolean;
   chooseLabel?: string;
+  /** Read in the browser, never uploaded: the server's size limit doesn't apply. */
+  local?: boolean;
 }
 
 /** Choose files (or a folder) with a button, or drop them anywhere on the page. */
-export function DropZone({ onFiles, accept, multiple = true, folders = false, hint, compact = false, chooseLabel = "Choose files" }: Props) {
+export function DropZone({ onFiles, accept, multiple = true, folders = false, hint, compact = false, chooseLabel = "Choose files", local = false }: Props) {
   const files = useRef<HTMLInputElement>(null);
   const dir = useRef<HTMLInputElement>(null);
   const dragging = useDragging();
@@ -42,7 +44,7 @@ export function DropZone({ onFiles, accept, multiple = true, folders = false, hi
       <div>
         <p className="font-semibold text-slate-900 dark:text-slate-100">{t(dragging ? "Release to add" : "Drop files here")}</p>
         <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{t(hint ?? "or choose them from your computer. Nothing is uploaded until you start.")}</p>
-        {max !== null && max < 1_000_000_000 && <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">{t("Up to {size} per file.", { size: formatLimit(max) })}</p>}
+        {!local && max !== null && max < 1_000_000_000 && <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">{t("Up to {size} per file.", { size: formatLimit(max) })}</p>}
       </div>
       <div className="flex flex-wrap justify-center gap-2">
         <Button variant="primary" onClick={() => files.current?.click()}>

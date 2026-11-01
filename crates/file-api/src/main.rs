@@ -14,7 +14,7 @@
 //!   FILE_API_STATIC_DIR       folder with the built web app to serve at /
 //!   FILE_API_ALLOWED_ORIGINS  comma-separated origins of other sites allowed to call the API (usually none)
 //!   FILE_API_CLIENT_IP_HEADER the header the platform's proxy puts the visitor's address in (fly-client-ip)
-//!   FILE_API_MAX_FILE_MB      largest file, default 100
+//!   FILE_API_MAX_FILE_MB      largest file, default 300
 //!   FILE_API_TURNSTILE_SITE_KEY + FILE_API_TURNSTILE_SECRET   Cloudflare Turnstile keys: new visitors pass a CAPTCHA (optional)
 
 use file_api::{start, ApiConfig};
@@ -46,7 +46,7 @@ async fn serve() -> std::io::Result<()> {
         let secret = std::env::var("FILE_API_SESSION_SECRET").map_err(|_| invalid("FILE_API_SESSION_SECRET is required in hosted mode".into()))?;
         let mb: u64 = match std::env::var("FILE_API_MAX_FILE_MB") {
             Ok(v) => v.parse().map_err(|_| invalid("FILE_API_MAX_FILE_MB must be a whole number".into()))?,
-            Err(_) => 100,
+            Err(_) => 300,
         };
         let mut c = ApiConfig::hosted(data_dir, &secret, list("FILE_API_ALLOWED_HOSTS"), mb * 1024 * 1024);
         c.allowed_origins = list("FILE_API_ALLOWED_ORIGINS");

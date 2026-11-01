@@ -1,4 +1,4 @@
-import { ArrowLeftRight, FileDown, Lock, LockOpen, Minimize2, PenLine, FileArchive, FilePenLine, FileText, Images, ImagePlus, Layers, Scissors, Shrink, type LucideIcon } from "lucide-react";
+import { ArrowLeftRight, QrCode, FileDown, Lock, LockOpen, Minimize2, PenLine, FileArchive, FilePenLine, FileText, Images, ImagePlus, Layers, Scissors, Shrink, type LucideIcon } from "lucide-react";
 import type { ToolId } from "./types";
 
 export interface ToolDef {
@@ -12,6 +12,8 @@ export interface ToolDef {
   /** Used on the dashboard cards for the selected files. */
   short: string;
   tool?: ToolId;
+  /** Runs entirely in the browser: always available, whatever the server can do. */
+  local?: boolean;
 }
 
 export const TOOLS: ToolDef[] = [
@@ -19,6 +21,7 @@ export const TOOLS: ToolDef[] = [
   { op: "resize_image", path: "/resize", title: "Compress images", short: "Compress images", description: "Make pictures lighter: a smaller file size, smaller dimensions, or both.", Icon: Minimize2, group: "files", tool: "resize" },
   { op: "compress", path: "/compress", title: "Make a ZIP", short: "Make a ZIP", description: "Put files and folders into one ZIP archive.", Icon: Shrink, group: "files", tool: "compress" },
   { op: "extract", path: "/extract", title: "Extract a ZIP", short: "Extract", description: "Open a ZIP archive safely, with a password if it has one.", Icon: FileArchive, group: "files", tool: "extract" },
+  { op: "qr", path: "/qr", title: "QR codes", short: "QR codes", description: "Make a QR code for a link, Wi-Fi or a contact, or read the text inside one.", Icon: QrCode, group: "files", local: true },
   { op: "pdf_view", path: "/pdf/editor", title: "PDF editor", short: "Open PDF", description: "View, reorder, rotate, delete and extract pages, and annotate.", Icon: FilePenLine, group: "pdf" },
   { op: "pdf_annotate", path: "/pdf/editor?sign=1", title: "Sign a PDF", short: "Sign", description: "Draw, type or upload your signature and place it on the page.", Icon: PenLine, group: "pdf" },
   { op: "pdf_compress", path: "/pdf/compress", title: "Compress PDF", short: "Compress PDF", description: "Make PDFs smaller by recompressing the pictures inside. Text stays sharp.", Icon: FileDown, group: "pdf", tool: "pdf-compress" },
