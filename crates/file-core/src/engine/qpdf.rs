@@ -228,6 +228,16 @@ impl QpdfHost {
     }
 }
 
+impl Outcome {
+    /// qpdf can repeat an argument in its message; a password must never reach the screen or a log.
+    pub fn redacted(self, secret: &str) -> Outcome {
+        match self {
+            Outcome::Failed(m) if !secret.is_empty() && m.contains(secret) => Outcome::Failed(m.replace(secret, "••••")),
+            other => other,
+        }
+    }
+}
+
 fn first_line(s: &str) -> String {
     // qpdf starts its messages with the file path; keep only what it says about the file.
     let line = s.lines().find(|l| !l.trim().is_empty()).unwrap_or("").trim();
@@ -364,7 +374,13 @@ impl Engine for QpdfEngine {
 
     fn preflight(&self, op: &Operation, files: &[FileDescriptor], strict: bool) -> Result<()> {
         match op {
-            Operation::PdfProtect(o) => check_password(&o.password, "a password")?,
+            Operation::PdfProtect(o) => {
+                check_password(&o.password, "a password")?;
+                // qpdf would read a leading dash as one of its options.
+                if o.password.expose().starts_with('-') {
+                    return Err(Error::InvalidRequest("The password can't start with “-”.".into()));
+                }
+            }
             Operation::PdfUnlock(o) => check_password(&o.password, "the current password")?,
             _ => return Err(Error::Unsupported("the qpdf engine does not handle this operation".into())),
         }
@@ -448,10 +464,12 @@ impl QpdfEngine {
                 let yn = |b: bool| if b { "y" } else { "n" };
                 let mut a = vec![
                     "in.pdf".to_string(),
+                    // Positional form (user, owner, key length): the `--user-password=` spelling only exists from qpdf 11.7,
+                    // and servers often have an older qpdf (Debian 12 ships 11.3).
                     "--encrypt".into(),
-                    format!("--user-password={}", o.password.expose()),
-                    format!("--owner-password={owner}"),
-                    "--bits=256".into(),
+                    o.password.expose().to_string(),
+                    owner,
+                    "256".into(),
                     format!("--print={}", if o.allow_print { "full" } else { "none" }),
                     format!("--extract={}", yn(o.allow_copy)),
                     format!("--modify={}", if o.allow_edit { "all" } else { "none" }),
@@ -469,7 +487,12 @@ impl QpdfEngine {
         if unlocking && !is_encrypted(&local) {
             return Err(Error::InvalidRequest("This PDF has no password, so there's nothing to remove.".into()));
         }
-        match self.host.run(&args, work.path(), &ctx.cancel_token())? {
+        let secret = match &req.operation {
+            Operation::PdfProtect(o) => o.password.expose(),
+            Operation::PdfUnlock(o) => o.password.expose(),
+            _ => unreachable!(),
+        };
+        match self.host.run(&args, work.path(), &ctx.cancel_token())?.redacted(secret) {
             Outcome::Ok | Outcome::Warnings => {}
             Outcome::WrongPassword if unlocking => return Err(Error::WrongPassword),
             Outcome::WrongPassword => return Err(Error::InvalidRequest("This PDF already has a different password. Remove it first with “Remove a PDF password”.".into())),
@@ -503,6 +526,12 @@ mod tests {
         assert_eq!(first_line("/tmp/x/in.pdf (offset 12): invalid password\n"), "invalid password");
         assert_eq!(first_line("qpdf: in.pdf: not a PDF file\n"), "in.pdf: not a PDF file");
         assert_eq!(first_line(""), "");
+    }
+
+    #[test]
+    fn a_password_never_appears_in_a_failure_message() {
+        let Outcome::Failed(m) = Outcome::Failed("unrecognized argument Secret123".into()).redacted("Secret123") else { panic!() };
+        assert!(!m.contains("Secret123"), "{m}");
     }
 
     #[test]
